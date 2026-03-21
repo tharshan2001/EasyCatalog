@@ -5,7 +5,7 @@ import slugify from "slug";
 // ---------------- Create Product ----------------
 export const createProduct = async (req, res) => {
   try {
-    const { code, name, slug, tags, archived } = req.body;
+    const { code, name, tags, archived } = req.body;
     let image_url = "";
 
     if (!name) {
@@ -16,13 +16,22 @@ export const createProduct = async (req, res) => {
       image_url = await uploadToS3(req.file, "products/");
     }
 
-    // Generate slug if not provided
-    const generatedSlug = slug ? slug : slugify(name, { lower: true });
+    // Generate a slug from the name
+    let generatedSlug = slugify(name, { lower: true });
 
-    // Check for duplicate code or slug
-    const exists = await Product.findOne({ $or: [{ code }, { slug: generatedSlug }] });
-    if (exists) {
-      return res.status(400).json({ message: "Product code or slug already exists" });
+    // Ensure uniqueness of slug
+    let slugExists = await Product.findOne({ slug: generatedSlug });
+    let counter = 1;
+    while (slugExists) {
+      generatedSlug = `${slugify(name, { lower: true })}-${counter}`;
+      slugExists = await Product.findOne({ slug: generatedSlug });
+      counter++;
+    }
+
+    // Check for duplicate code
+    const codeExists = await Product.findOne({ code });
+    if (codeExists) {
+      return res.status(400).json({ message: "Product code already exists" });
     }
 
     const product = await Product.create({

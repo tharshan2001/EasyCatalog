@@ -1,103 +1,88 @@
-import React, { useState } from "react";
-import { Layout, Menu, ConfigProvider } from "antd";
-import { Link } from "react-router-dom";
-import {
-  LayoutDashboard,
-  PackageSearch,
-  Store,
-  Users,
-  Settings,
-  Package,
-  LogOut,
-} from "lucide-react";
-
-const { Sider } = Layout;
-
-// Helper for Ant Design Menu items
-const getItem = (label, key, icon, children) => ({
-  key,
-  icon,
-  children,
-  label,
-});
+import React, { useState } from 'react';
+import { 
+  LayoutDashboard, 
+  Package, 
+  LogOut 
+} from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import useAuthStore from '../store/authStore.js';
 
 const Sidebar = () => {
-  const [collapsed, setCollapsed] = useState(false);
+  const navigate = useNavigate();
+  const { logout } = useAuthStore();
 
-  const items = [
-    getItem(<Link to="/admin/dashboard">Atelier Overview</Link>, "dashboard", <LayoutDashboard size={18} />),
-    getItem(
-      <span>Store</span>,
-      "products",
-      <Store size={18} />,
-      [
-        getItem(<Link to="/admin/product-list">Products</Link>, "prod-active"),
-        getItem(<Link to="/admin/category">Category</Link>, "prod-category"),
-      ]
-    ),
-    getItem(<Link to="/admin/order-list">Orders</Link>, "orders", <Package size={18} />),
-    getItem(<Link to="/admin/customers">Customers</Link>, "customers", <Users size={18} />),
-    getItem(<Link to="/admin/settings">Settings</Link>, "settings", <Settings size={18} />),
+  // Active route tracking using react-router
+  const [activeItem, setActiveItem] = useState('Dashboard');
+
+  const navItems = [
+    { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
+    { name: 'Products', icon: Package, path: '/products' },
   ];
 
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login'); // redirect to login page after logout
+    } catch (err) {
+      console.error('Logout failed:', err);
+    }
+  };
+
   return (
-    <ConfigProvider
-      theme={{
-        token: {
-          colorPrimary: "#5C4033",
-          colorBgContainer: "#FCF9F6",
-          colorText: "#57534e",
-          fontFamily: "inherit",
-        },
-        components: {
-          Menu: {
-            itemBg: "transparent",
-            itemSelectedBg: "#f3e8ff",
-            itemSelectedColor: "#5C4033",
-            itemHoverBg: "#f5f5f4",
-            itemActiveBg: "#f5f5f4",
-          },
-          Layout: {
-            siderBg: "#FCF9F6",
-          },
-        },
-      }}
-    >
-      <Sider
-        collapsible
-        collapsed={collapsed}
-        onCollapse={setCollapsed}
-        width={260}
-        className="min-h-screen border-r border-stone-200 relative z-20"
-        theme="light"
-      >
-        {/* Brand Header */}
-        <div className="h-20 flex items-center justify-center border-b border-stone-200 mb-4">
-          <span className={`font-serif text-[#5C4033] font-bold tracking-tighter transition-all ${collapsed ? "text-xl" : "text-2xl"}`}>
-            {collapsed ? "L&C" : "LOOM & CRAFT"}
-          </span>
+    <aside className="flex flex-col w-64 h-screen px-4 py-6 bg-slate-50 border-r border-slate-200">
+      {/* Brand / Logo */}
+      <div className="flex items-center gap-2 px-2 mb-8">
+        <div className="flex items-center justify-center w-8 h-8 bg-blue-600 rounded-lg">
+          <Package className="w-5 h-5 text-white" />
         </div>
+        <span className="text-xl font-bold text-slate-800">StoreAdmin</span>
+      </div>
 
-        {/* Menu */}
-        <Menu
-          defaultSelectedKeys={["dashboard"]}
-          mode="inline"
-          items={items}
-          className="border-none px-2 font-medium"
-        />
+      {/* Main Navigation */}
+      <nav className="flex-1 space-y-1">
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = activeItem === item.name;
 
-        {/* Logout */}
-        <div className="absolute bottom-16 w-full px-4">
-          <Link
-            to="/admin/logout"
-            className={`flex items-center gap-3 text-stone-500 hover:text-red-700 transition-colors w-full p-2 ${collapsed ? "justify-center" : "justify-start"}`}
+          return (
+            <button
+              key={item.name}
+              onClick={() => {
+                setActiveItem(item.name);
+                navigate(item.path); // navigate to route
+              }}
+              className={`flex items-center w-full gap-3 px-3 py-2.5 rounded-lg transition-colors duration-200 font-medium ${
+                isActive
+                  ? 'bg-blue-100 text-blue-700'
+                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+              }`}
+            >
+              <Icon className={`w-5 h-5 ${isActive ? 'text-blue-700' : 'text-slate-400'}`} />
+              {item.name}
+            </button>
+          );
+        })}
+      </nav>
+
+      {/* Bottom Section (Profile & Logout) */}
+      <div className="pt-4 mt-6 border-t border-slate-200 space-y-1">
+        <div className="flex items-center gap-3 px-3 py-3 mt-4 rounded-lg bg-slate-100">
+          <div className="w-9 h-9 rounded-full bg-slate-300 flex items-center justify-center font-bold text-slate-600">
+            JD
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-slate-900 truncate">Jane Doe</p>
+            <p className="text-xs text-slate-500 truncate">admin@store.com</p>
+          </div>
+          <button
+            onClick={handleLogout} // logout action
+            className="p-1 text-slate-400 hover:text-red-600 transition-colors"
           >
-            <LogOut size={18} />
-            {!collapsed && <span className="text-sm font-medium">Exit Portal</span>}
-          </Link>
+            <LogOut className="w-5 h-5" />
+          </button>
         </div>
-      </Sider>
-    </ConfigProvider>
+      </div>
+    </aside>
   );
 };
 
