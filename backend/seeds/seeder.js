@@ -16,14 +16,14 @@ const seedAdmin = async () => {
     }
 
     const admin = await User.create({
-      username: "admin",
-      password: "admin123", // default password
+      username: "admin@ebee",
+      password: "ebee@2026#15", // default password
       role: "admin",
     });
 
     console.log("Admin user created:");
     console.log(`Username: ${admin.username}`);
-    console.log(`Password: admin123`);
+    console.log(`Password: ebee@2026`);
     process.exit();
   } catch (error) {
     console.error("Error seeding admin:", error.message);

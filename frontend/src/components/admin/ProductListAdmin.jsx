@@ -4,15 +4,15 @@ import {
   Loader2,
   Plus,
   PackageOpen,
-  AlertCircle,
   X,
   PackagePlus,
   Upload,
-  CheckCircle2,
   Image as ImageIcon,
   AlertCircle as AlertIcon
 } from "lucide-react";
 import api from "../../store/api";
+import { toast } from "react-hot-toast";
+import Swal from "sweetalert2";
 
 export default function ProductListAdmin() {
   const [products, setProducts] = useState([]);
@@ -27,8 +27,6 @@ export default function ProductListAdmin() {
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
   const [formLoading, setFormLoading] = useState(false);
-  const [formError, setFormError] = useState(null);
-  const [formSuccess, setFormSuccess] = useState(false);
 
   const observer = useRef();
   const scrollContainerRef = useRef(null);
@@ -59,6 +57,7 @@ export default function ProductListAdmin() {
           ...item,
           tags: item.tags ?? [],
           image_url: item.image_url ?? "",
+          archived: item.archived ?? false, // rely on backend
         }));
 
       if (cursor) {
@@ -77,6 +76,7 @@ export default function ProductListAdmin() {
       console.error("Failed to fetch products:", err);
       setError("The archive could not be reached at this time.");
       setHasMore(false);
+      toast.error("Failed to load products");
     } finally {
       setLoading(false);
       setScrollLoading(false);
@@ -103,29 +103,50 @@ export default function ProductListAdmin() {
   );
 
   const handleDelete = async (_id) => {
-    if (!window.confirm("Are you sure you want to remove this product?")) return;
+    const result = await Swal.fire({
+      title: "Are you sure?",
+      text: "Do you really want to remove this product?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, delete it!",
+    });
+
+    if (!result.isConfirmed) return;
+
     try {
       await api.delete(`products/admin/${_id}`);
       setProducts(prev => prev.filter(p => p._id !== _id));
+      toast.success("Product deleted successfully");
     } catch (err) {
       console.error("Delete failed:", err);
-      alert("Action failed. Please try again.");
+      Swal.fire("Failed", "Action failed. Please try again.", "error");
     }
   };
 
+  // Archive handler – relies fully on backend to persist status
   const handleArchive = async (_id) => {
     const product = products.find(p => p._id === _id);
     if (!product) return;
 
     const newStatus = !product.archived;
-    setProducts(prev => prev.map(p => (p._id === _id ? { ...p, archived: newStatus } : p)));
+
+    // Optimistic update
+    setProducts(prev =>
+      prev.map(p => (p._id === _id ? { ...p, archived: newStatus } : p))
+    );
 
     try {
       await api.put(`products/admin/${_id}/archive`, { archived: newStatus });
+      toast.success(`Product ${newStatus ? "archived" : "unarchived"}`);
     } catch (err) {
       console.error("Archive failed:", err);
-      alert("Status update failed.");
-      setProducts(prev => prev.map(p => (p._id === _id ? { ...p, archived: product.archived } : p)));
+      Swal.fire("Failed", "Status update failed.", "error");
+      // Revert on failure
+      setProducts(prev =>
+        prev.map(p => (p._id === _id ? { ...p, archived: product.archived } : p))
+      );
     }
   };
 
@@ -146,8 +167,6 @@ export default function ProductListAdmin() {
   const handleFormSubmit = async e => {
     e.preventDefault();
     setFormLoading(true);
-    setFormError(null);
-    setFormSuccess(false);
 
     try {
       const payload = new FormData();
@@ -158,17 +177,16 @@ export default function ProductListAdmin() {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      setFormSuccess(true);
+      toast.success("Product created successfully!");
       setFormData({ code: "", name: "", tags: "", price: "" });
       setFile(null);
       setPreview(null);
 
-      // Reload products
       loadProducts();
-      // Close modal after short delay
       setTimeout(() => setIsModalOpen(false), 1000);
     } catch (err) {
-      setFormError(err.response?.data?.message || "Failed to create product");
+      console.error(err);
+      Swal.fire("Error", err.response?.data?.message || "Failed to create product", "error");
     } finally {
       setFormLoading(false);
     }
@@ -200,7 +218,7 @@ export default function ProductListAdmin() {
         {/* Products Table */}
         {error ? (
           <div className="bg-red-50 border-l-2 border-red-400 p-4 flex items-center gap-4 text-red-800 italic">
-            <AlertCircle size={20} /> {error}
+            <AlertIcon size={20} /> {error}
           </div>
         ) : products.length === 0 ? (
           <div className="text-center py-32 bg-white border border-dashed border-slate-200">
@@ -261,18 +279,6 @@ export default function ProductListAdmin() {
                 <p className="text-xs text-stone-500">Add a new item to your catalog</p>
               </div>
             </div>
-
-            {/* Inline status messages */}
-            {formError && (
-              <div className="px-3 py-2 bg-red-50 text-red-700 rounded-md flex items-center gap-2 text-xs border border-red-100 mb-4">
-                <AlertIcon size={14} /> {formError}
-              </div>
-            )}
-            {formSuccess && (
-              <div className="px-3 py-2 bg-green-50 text-green-700 rounded-md flex items-center gap-2 text-xs border border-green-100 mb-4">
-                <CheckCircle2 size={14} /> Product Created
-              </div>
-            )}
 
             <form onSubmit={handleFormSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {/* Left Column */}

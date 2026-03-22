@@ -155,14 +155,25 @@ export const updateProduct = async (req, res) => {
 };
 
 // ---------------- Archive Product ----------------
+// ---------------- Archive / Unarchive Product ----------------
 export const archiveProduct = async (req, res) => {
   try {
     const { id } = req.params;
+    const { archived } = req.body;
 
-    const product = await Product.findByIdAndUpdate(id, { archived: true }, { new: true });
+    if (archived === undefined) {
+      return res.status(400).json({ message: "Archived status is required" });
+    }
+
+    const product = await Product.findByIdAndUpdate(
+      id,
+      { archived: Boolean(archived) },
+      { new: true }
+    );
+
     if (!product) return res.status(404).json({ message: "Product not found" });
 
-    res.json({ message: "Product archived", product });
+    res.json({ message: `Product ${archived ? "archived" : "unarchived"}`, product });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }

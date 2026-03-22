@@ -53,7 +53,7 @@ const ProductCardAdmin = React.forwardRef(({ product, onDelete, onToggleArchive 
 
       {/* Price */}
       <td className="px-4 py-4">
-        <span className="text-sm font-medium text-slate-700 font-serif">${price}</span>
+        <span className="text-sm font-medium text-slate-700 font-areial">LKR {price}</span>
       </td>
 
       {/* Status */}

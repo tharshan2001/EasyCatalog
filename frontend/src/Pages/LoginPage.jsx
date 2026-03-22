@@ -16,7 +16,7 @@ const LoginPage = () => {
     try {
       await login(formData.username, formData.password);
       toast.success("Logged in successfully!");
-      navigate("/dashboard");
+      navigate("/admin/dashboard");
     } catch (err) {
       toast.error(err?.message || "Login failed. Please try again.");
     }

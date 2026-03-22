@@ -14,8 +14,8 @@ const Sidebar = () => {
   const [activeItem, setActiveItem] = useState('Dashboard');
 
   const navItems = [
-    { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
-    { name: 'Products', icon: Package, path: '/products' },
+    { name: 'Dashboard', icon: LayoutDashboard, path: '/admin/dashboard' },
+    { name: 'Products', icon: Package, path: '/admin/products' },
   ];
 
   const handleLogout = async () => {

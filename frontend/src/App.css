@@ -182,3 +182,17 @@
     border-right-color: var(--border);
   }
 }
+
+/* Hide scrollbars only on mobile (max-width 768px) */
+@media (max-width: 768px) {
+  /* Firefox */
+  * {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  /* Chrome, Safari, Edge */
+  *::-webkit-scrollbar {
+    display: none;
+  }
+}
