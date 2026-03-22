@@ -3,7 +3,7 @@ import api from "./api.js"; // your centralized axios instance
 
 const useAuthStore = create((set) => ({
   user: null,
-  loading: true, // start as true to wait for fetchMe on mount
+  loading: false, // start false
   error: null,
 
   // login action
@@ -11,7 +11,6 @@ const useAuthStore = create((set) => ({
     set({ loading: true, error: null });
     try {
       await api.post("/auth/login", { username, password });
-      // fetch user after login
       const res = await api.get("/auth/me");
       set({ user: res.data, loading: false });
       return res.data;
@@ -45,6 +44,7 @@ const useAuthStore = create((set) => ({
       const res = await api.get("/auth/me"); // sends cookies automatically
       set({ user: res.data, loading: false });
     } catch (err) {
+      // even if API fails, loading must become false
       set({ user: null, loading: false });
     }
   },

@@ -9,9 +9,8 @@ import useAuthStore from '../store/authStore.js';
 
 const Sidebar = () => {
   const navigate = useNavigate();
-  const { logout } = useAuthStore();
+  const { user, logout } = useAuthStore(); // get user from store
 
-  // Active route tracking using react-router
   const [activeItem, setActiveItem] = useState('Dashboard');
 
   const navItems = [
@@ -22,7 +21,7 @@ const Sidebar = () => {
   const handleLogout = async () => {
     try {
       await logout();
-      navigate('/login'); // redirect to login page after logout
+      navigate('/login');
     } catch (err) {
       console.error('Logout failed:', err);
     }
@@ -49,7 +48,7 @@ const Sidebar = () => {
               key={item.name}
               onClick={() => {
                 setActiveItem(item.name);
-                navigate(item.path); // navigate to route
+                navigate(item.path);
               }}
               className={`flex items-center w-full gap-3 px-3 py-2.5 rounded-lg transition-colors duration-200 font-medium ${
                 isActive
@@ -65,23 +64,24 @@ const Sidebar = () => {
       </nav>
 
       {/* Bottom Section (Profile & Logout) */}
-      <div className="pt-4 mt-6 border-t border-slate-200 space-y-1">
-        <div className="flex items-center gap-3 px-3 py-3 mt-4 rounded-lg bg-slate-100">
-          <div className="w-9 h-9 rounded-full bg-slate-300 flex items-center justify-center font-bold text-slate-600">
-            JD
+      {user && (
+        <div className="pt-4 mt-6 border-t border-slate-200 space-y-1">
+          <div className="flex items-center gap-3 px-3 py-3 mt-4 rounded-lg bg-slate-100">
+            <div className="w-9 h-9 rounded-full bg-slate-300 flex items-center justify-center font-bold text-slate-600">
+              {user.username[0].toUpperCase()} {/* first letter of username */}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-slate-900 truncate">{user.username}</p>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="p-1 text-slate-400 hover:text-red-600 transition-colors"
+            >
+              <LogOut className="w-5 h-5" />
+            </button>
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-slate-900 truncate">Jane Doe</p>
-            <p className="text-xs text-slate-500 truncate">admin@store.com</p>
-          </div>
-          <button
-            onClick={handleLogout} // logout action
-            className="p-1 text-slate-400 hover:text-red-600 transition-colors"
-          >
-            <LogOut className="w-5 h-5" />
-          </button>
         </div>
-      </div>
+      )}
     </aside>
   );
 };

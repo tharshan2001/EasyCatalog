@@ -24,6 +24,16 @@ export default function RecentProductsTable() {
     fetchRecentProducts();
   }, []);
 
+  // Helper to format date as "May 20"
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat("en-US", {
+      month: "long",
+      day: "numeric",
+    }).format(date);
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center py-20 bg-white border border-slate-100 rounded-sm">
@@ -58,7 +68,7 @@ export default function RecentProductsTable() {
             <th className="px-5 py-4 text-left text-[10px] uppercase tracking-[0.2em] text-slate-400 font-bold">Product Name</th>
             <th className="px-5 py-4 text-left text-[10px] uppercase tracking-[0.2em] text-slate-400 font-bold">Price</th>
             <th className="px-5 py-4 text-left text-[10px] uppercase tracking-[0.2em] text-slate-400 font-bold">Tags</th>
-            <th className="px-5 py-4 text-left text-[10px] uppercase tracking-[0.2em] text-slate-400 font-bold">Date</th>
+            <th className="px-5 py-4 text-left text-[10px] uppercase tracking-[0.2em] text-slate-400 font-bold">Added On</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">
@@ -84,8 +94,8 @@ export default function RecentProductsTable() {
                   )}
                 </div>
               </td>
-              <td className="px-5 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-tight">
-                {new Date(product.createdAt).toLocaleDateString()}
+              <td className="px-5 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                {formatDate(product.createdAt)}
               </td>
             </tr>
           ))}
