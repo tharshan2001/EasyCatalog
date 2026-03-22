@@ -56,17 +56,38 @@ export const createProduct = async (req, res) => {
 };
 
 // ---------------- Get Products for normal users (cursor-based infinite scroll) ----------------
+// controllers/productController.js
 export const getProducts = async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 10;
     const lastCreatedAt = req.query.lastCreatedAt ? new Date(req.query.lastCreatedAt) : null;
+    const minPrice = req.query.minPrice ? Number(req.query.minPrice) : null;
+    const maxPrice = req.query.maxPrice ? Number(req.query.maxPrice) : null;
+    const search = req.query.search ? req.query.search.trim() : null;
 
     const filter = { archived: false };
+
+    // Cursor for infinite scroll
     if (lastCreatedAt) filter.createdAt = { $lt: lastCreatedAt };
+
+    // Price filter
+    if (minPrice !== null || maxPrice !== null) {
+      filter.price = {};
+      if (minPrice !== null) filter.price.$gte = minPrice;
+      if (maxPrice !== null) filter.price.$lte = maxPrice;
+    }
+
+    // Search filter (name or code)
+    if (search) {
+      filter.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { code: { $regex: search, $options: 'i' } }
+      ];
+    }
 
     const products = await Product.find(filter)
       .sort({ createdAt: -1 })
-      .select("_id code name slug image_url tags price") // included code and price
+      .select('_id code name slug image_url tags price') 
       .limit(limit);
 
     res.json({
@@ -75,7 +96,7 @@ export const getProducts = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 

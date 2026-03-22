@@ -33,7 +33,7 @@ router.post(
 
 // PUT update product
 router.put(
-  "/:id",
+  "/admin/:id",
   protect,
   authorizeRoles("admin"),
   upload.single("image"),
@@ -41,9 +41,9 @@ router.put(
 );
 
 // PUT archive product
-router.put("/:id/archive", protect, authorizeRoles("admin"), archiveProduct);
+router.put("/admin/:id/archive", protect, authorizeRoles("admin"), archiveProduct);
 
 // DELETE product
-router.delete("/:id", protect, authorizeRoles("admin"), deleteProduct);
+router.delete("/admin/:id", protect, authorizeRoles("admin"), deleteProduct);
 
 export default router;

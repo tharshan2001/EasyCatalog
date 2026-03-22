@@ -1,49 +1,86 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 
-export default function FilterPanel({ onApply }) {
-  const [minPrice, setMinPrice] = useState('');
-  const [maxPrice, setMaxPrice] = useState('');
-  const [loading, setLoading] = useState(false);
+export default function FilterPanel({ onFilter, minLimit = 0, maxLimit = 10000 }) {
+  const [minValue, setMinValue] = useState(minLimit);
+  const [maxValue, setMaxValue] = useState(maxLimit);
 
-  const handleApply = () => {
-    setLoading(true);
-    onApply({
-      minPrice: minPrice ? parseFloat(minPrice) : undefined,
-      maxPrice: maxPrice ? parseFloat(maxPrice) : undefined,
-    });
-    setLoading(false);
+  // Ensure min slider doesn't exceed maxValue and vice versa
+  const handleMinChange = (e) => {
+    const value = Number(e.target.value);
+    setMinValue(Math.min(value, maxValue));
+  };
+
+  const handleMaxChange = (e) => {
+    const value = Number(e.target.value);
+    setMaxValue(Math.max(value, minValue));
+  };
+
+  const applyFilter = () => {
+    onFilter({ min: minValue, max: maxValue });
+  };
+
+  const resetFilter = () => {
+    setMinValue(minLimit);
+    setMaxValue(maxLimit);
+    onFilter({ min: minLimit, max: maxLimit });
   };
 
   return (
-    <div className="flex flex-col gap-4">
-      <h2 className="font-bold text-lg text-stone-800">Filters</h2>
+    <div className="flex flex-col gap-6 lg:sticky lg:top-28">
+      <div>
+        <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wider mb-4">
+          Price Range
+        </h3>
+        
+        <div className="bg-stone-100 p-4 rounded-2xl border border-stone-200/50 space-y-4">
+          {/* Display current min and max */}
+          <div className="flex justify-between items-end">
+            <div>
+              <span className="text-[10px] text-stone-500 font-bold uppercase block">Min</span>
+              <span className="font-mono font-bold text-stone-900">LKR {minValue}</span>
+            </div>
+            <div className="text-right">
+              <span className="text-[10px] text-stone-500 font-bold uppercase block">Max</span>
+              <span className="font-mono font-bold text-yellow-600">LKR {maxValue}</span>
+            </div>
+          </div>
 
-      <div className="flex flex-col gap-2">
-        <label className="text-stone-600 text-sm">Min Price</label>
-        <input
-          type="number"
-          value={minPrice}
-          onChange={(e) => setMinPrice(e.target.value)}
-          className="w-full px-3 py-2 border border-stone-200 rounded-lg outline-none focus:ring-2 focus:ring-yellow-400"
-        />
-      </div>
+          {/* Min slider */}
+          <input
+            type="range"
+            min={minLimit}
+            max={maxLimit}
+            step={100}
+            value={minValue}
+            onChange={handleMinChange}
+            className="w-full h-1.5 bg-stone-200 rounded-lg appearance-none cursor-pointer accent-yellow-500"
+          />
 
-      <div className="flex flex-col gap-2">
-        <label className="text-stone-600 text-sm">Max Price</label>
-        <input
-          type="number"
-          value={maxPrice}
-          onChange={(e) => setMaxPrice(e.target.value)}
-          className="w-full px-3 py-2 border border-stone-200 rounded-lg outline-none focus:ring-2 focus:ring-yellow-400"
-        />
+          {/* Max slider */}
+          <input
+            type="range"
+            min={minLimit}
+            max={maxLimit}
+            step={100}
+            value={maxValue}
+            onChange={handleMaxChange}
+            className="w-full h-1.5 bg-stone-200 rounded-lg appearance-none cursor-pointer accent-yellow-500"
+          />
+        </div>
       </div>
 
       <button
-        onClick={handleApply}
-        disabled={loading}
-        className="mt-2 bg-yellow-400 text-white py-2 rounded-lg font-semibold hover:bg-yellow-500 transition-colors"
+        onClick={applyFilter}
+        className="w-full bg-yellow-400 text-white font-bold py-3.5 rounded-xl hover:bg-yellow-500 hover:text-stone-900 shadow-lg shadow-stone-200 transition-all active:scale-[0.98]"
       >
-        {loading ? 'Applying...' : 'Apply Filters'}
+        Apply Filters
+      </button>
+      
+      <button 
+        onClick={resetFilter}
+        className="text-xs font-bold text-stone-500 hover:text-stone-600 transition-colors uppercase tracking-widest text-center"
+      >
+        Reset to Default
       </button>
     </div>
   );
