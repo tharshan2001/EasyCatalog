@@ -100,7 +100,7 @@ export default function ProductCatalog() {
   );
 
   return (
-    <div className="min-h-screen bg-stone-50">
+    <div className=" bg-stone-50">
       {/* HEADER */}
       <header
         className={`sticky top-0 z-30 w-full backdrop-blur-md transition-all duration-300 ${
@@ -162,7 +162,7 @@ export default function ProductCatalog() {
                 />
               </div>
               <h1 className="text-2xl font-black text-stone-900">
-                Catalog
+                Ebee.lk
               </h1>
             </div>
 
