@@ -8,6 +8,7 @@ const productSchema = new mongoose.Schema(
     image_url: { type: String, trim: true },
     tags: [{ type: String }], // optional array of tags
     archived: { type: Boolean, default: false }, // default not archived
+    price: { type: Number, required: true, min: 0 }, // added price field
   },
   { timestamps: true }
 );

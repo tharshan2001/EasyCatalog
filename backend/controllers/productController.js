@@ -5,11 +5,15 @@ import slugify from "slug";
 // ---------------- Create Product ----------------
 export const createProduct = async (req, res) => {
   try {
-    const { code, name, tags, archived } = req.body;
+    const { code, name, tags, price } = req.body;
     let image_url = "";
 
     if (!name) {
       return res.status(400).json({ message: "Product name is required" });
+    }
+
+    if (price === undefined || isNaN(price) || Number(price) < 0) {
+      return res.status(400).json({ message: "Valid product price is required" });
     }
 
     if (req.file) {
@@ -40,7 +44,8 @@ export const createProduct = async (req, res) => {
       slug: generatedSlug,
       image_url,
       tags: tags ? tags.split(",").map((t) => t.trim()) : [],
-      archived: archived === "true" || archived === true,
+      price: Number(price),
+      archived: false,
     });
 
     res.status(201).json({ message: "Product created", product });
@@ -50,25 +55,23 @@ export const createProduct = async (req, res) => {
   }
 };
 
-
 // ---------------- Get Products for normal users (cursor-based infinite scroll) ----------------
 export const getProducts = async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 10;
     const lastCreatedAt = req.query.lastCreatedAt ? new Date(req.query.lastCreatedAt) : null;
 
-    // Filter for unarchived products
     const filter = { archived: false };
     if (lastCreatedAt) filter.createdAt = { $lt: lastCreatedAt };
 
     const products = await Product.find(filter)
-      .sort({ createdAt: -1 }) // newest first
-      .select("_id name slug image_url tags") // return minimal fields
+      .sort({ createdAt: -1 })
+      .select("_id code name slug image_url tags price") // included code and price
       .limit(limit);
 
     res.json({
       products,
-      hasMore: products.length === limit, // tells client if more products exist
+      hasMore: products.length === limit,
     });
   } catch (error) {
     console.error(error);
@@ -82,13 +85,12 @@ export const getProductsAdmin = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const lastCreatedAt = req.query.lastCreatedAt ? new Date(req.query.lastCreatedAt) : null;
 
-    // Filter for all products
     const filter = {};
     if (lastCreatedAt) filter.createdAt = { $lt: lastCreatedAt };
 
     const products = await Product.find(filter)
       .sort({ createdAt: -1 })
-      .select("_id code name slug image_url tags archived createdAt") // minimal fields + archived
+      .select("_id code name slug image_url tags archived price createdAt") // include price
       .limit(limit);
 
     res.json({
@@ -101,12 +103,11 @@ export const getProductsAdmin = async (req, res) => {
   }
 };
 
-
 // ---------------- Update Product ----------------
 export const updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
-    const { code, name, slug, tags, archived } = req.body;
+    const { code, name, slug, tags, archived, price } = req.body;
     let image_url;
 
     if (req.file) {
@@ -119,6 +120,7 @@ export const updateProduct = async (req, res) => {
       ...(slug && { slug }),
       ...(tags && { tags: tags.split(",").map((t) => t.trim()) }),
       ...(archived !== undefined && { archived }),
+      ...(price !== undefined && { price: Number(price) }),
       ...(image_url && { image_url }),
     };
 

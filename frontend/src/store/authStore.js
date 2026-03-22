@@ -1,20 +1,19 @@
-// src/store/authStore.js
 import { create } from "zustand";
-import api from "./api.js"; // use the centralized axios instance
+import api from "./api.js"; // your centralized axios instance
 
 const useAuthStore = create((set) => ({
   user: null,
-  loading: false,
+  loading: true, // start as true to wait for fetchMe on mount
   error: null,
 
   // login action
   login: async (username, password) => {
     set({ loading: true, error: null });
     try {
-      const res = await api.post("/auth/login", { username, password });
-      // fetch logged-in user info after login
-      await useAuthStore.getState().fetchMe();
-      set({ loading: false });
+      await api.post("/auth/login", { username, password });
+      // fetch user after login
+      const res = await api.get("/auth/me");
+      set({ user: res.data, loading: false });
       return res.data;
     } catch (err) {
       set({
@@ -39,11 +38,11 @@ const useAuthStore = create((set) => ({
     }
   },
 
-  // fetch authenticated user
+  // fetch authenticated user (used on page load / refresh)
   fetchMe: async () => {
     set({ loading: true, error: null });
     try {
-      const res = await api.get("/auth/me");
+      const res = await api.get("/auth/me"); // sends cookies automatically
       set({ user: res.data, loading: false });
     } catch (err) {
       set({ user: null, loading: false });

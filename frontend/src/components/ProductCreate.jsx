@@ -7,7 +7,7 @@ export default function CreateProductPage() {
     code: "",
     name: "",
     tags: "",
-    archived: false,
+    price: "", // added price
   });
 
   const [file, setFile] = useState(null);
@@ -48,7 +48,7 @@ export default function CreateProductPage() {
       });
 
       setSuccess(true);
-      setFormData({ code: "", name: "", tags: "", archived: false });
+      setFormData({ code: "", name: "", tags: "", price: "" });
       setFile(null);
       setPreview(null);
     } catch (err) {
@@ -77,7 +77,7 @@ export default function CreateProductPage() {
             </div>
           </div>
 
-          {/* Inline Status Messages to save vertical space */}
+          {/* Inline Status Messages */}
           <div className="flex-1 max-w-xs ml-4">
             {error && (
               <div className="animate-in fade-in slide-in-from-top-1 px-3 py-2 bg-red-50 text-red-700 rounded-md flex items-center gap-2 text-xs border border-red-100">
@@ -96,22 +96,29 @@ export default function CreateProductPage() {
           
           {/* Left Column: Form Fields */}
           <div className="space-y-5">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="col-span-1">
-                <label className={labelStyle}>Product Code</label>
-                <input type="text" name="code" value={formData.code} onChange={handleChange} className={inputStyle} placeholder="E.g. VASE-001" required />
-              </div>
-              <div className="col-span-1 flex items-end pb-2">
-                <label className="flex items-center gap-2 cursor-pointer group">
-                  <input type="checkbox" name="archived" checked={formData.archived} onChange={handleChange} className="w-4 h-4 rounded border-stone-300 text-blue-600 focus:ring-blue-500" />
-                  <span className="text-sm font-medium text-stone-600 group-hover:text-stone-900 transition-colors">Archive on creation</span>
-                </label>
-              </div>
+            <div>
+              <label className={labelStyle}>Product Code</label>
+              <input type="text" name="code" value={formData.code} onChange={handleChange} className={inputStyle} placeholder="E.g. VASE-001" required />
             </div>
 
             <div>
               <label className={labelStyle}>Product Name</label>
               <input type="text" name="name" value={formData.name} onChange={handleChange} className={inputStyle} placeholder="Handcrafted Ceramic Vase" required />
+            </div>
+
+            <div>
+              <label className={labelStyle}>Price (LKR)</label>
+              <input
+                type="number"
+                name="price"
+                value={formData.price}
+                onChange={handleChange}
+                className={inputStyle}
+                placeholder="E.g. 3500"
+                min="0"
+                step="0.01"
+                required
+              />
             </div>
 
             <div>
@@ -124,14 +131,14 @@ export default function CreateProductPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-slate-900 text-white font-semibold py-3 rounded-xl hover:bg-slate-800 flex items-center justify-center gap-2 disabled:opacity-50 transition-all shadow-lg shadow-slate-200 active:scale-[0.98]"
+                className="w-full bg-blue-500 text-white font-semibold py-3 rounded-xl hover:bg-blue-600 flex items-center justify-center gap-2 disabled:opacity-50 transition-all shadow-lg shadow-slate-200 active:scale-[0.98]"
               >
                 {loading ? <Loader2 size={18} className="animate-spin" /> : <>Create Product</>}
               </button>
             </div>
           </div>
 
-          {/* Right Column: Image Upload - Fixed Aspect Ratio */}
+          {/* Right Column: Image Upload */}
           <div className="flex flex-col">
             <label className={labelStyle}>Product Image</label>
             <div className="relative flex-1 min-h-[240px] group">
@@ -146,7 +153,7 @@ export default function CreateProductPage() {
                 </div>
               ) : (
                 <div className="absolute inset-0 rounded-2xl overflow-hidden border border-stone-200 bg-stone-100">
-                  <img src={preview} alt="Preview" className="w-full h-full object-cover" />
+                  <img src={preview} alt="Preview" className="w-full h-full object-fit p-5" />
                   <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity" />
                   <button
                     type="button"
@@ -158,7 +165,6 @@ export default function CreateProductPage() {
                 </div>
               )}
             </div>
-            {/* Maintains height even when empty */}
             {!preview && <div className="mt-2 flex items-center gap-2 text-stone-400 italic text-[11px]">
                <ImageIcon size={12} /> No image selected
             </div>}

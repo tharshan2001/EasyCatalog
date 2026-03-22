@@ -4,7 +4,8 @@ import LoginPage from "./pages/LoginPage.jsx";
 import DashboardPage from "./pages/DashboardPage.jsx";
 import AdminLayout from "./layout/AdminLayout.jsx";
 import AdminRoute from "./routes/AdminRoute.jsx";
-import ProductsPage from "./Pages/ProductsPage.jsx";
+import ProductsPage from "./Pages/ProductPage.jsx";
+import Home from "./components/Home.jsx";
 
 const App = () => {
   return (
@@ -17,9 +18,10 @@ const App = () => {
         <Route element={<AdminRoute />}>
           <Route element={<AdminLayout />}>
             <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/products" element={<ProductsPage/>} />
+            <Route path="/products" element={<Home />} />
             {/* Add more admin pages here */}
           </Route>
+          <Route path="/cat" element={<ProductsPage />} />
         </Route>
       </Routes>
     </Router>
