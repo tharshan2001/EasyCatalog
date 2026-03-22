@@ -11,7 +11,7 @@ export default function ProductCatalog() {
   const [loading, setLoading] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-  const [priceFilter, setPriceFilter] = useState({ min: 0, max: 10000 });
+  const [priceFilter, setPriceFilter] = useState({ min: 0, max: 100000 });
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
 
@@ -30,40 +30,65 @@ export default function ProductCatalog() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const fetchProducts = async (reset = false) => {
-    if (loadingRef.current || (!hasMore && !reset)) return;
-    loadingRef.current = true;
-    setLoading(true);
+ const fetchProducts = async (reset = false) => {
+  if (loadingRef.current || (!hasMore && !reset)) return;
+  loadingRef.current = true;
+  setLoading(true);
 
-    try {
-      const res = await api.get("/products", {
-        params: {
-          limit: 12,
-          lastCreatedAt: reset ? undefined : lastCreatedAt,
-          minPrice: priceFilter.min,
-          maxPrice: priceFilter.max,
-          search: search || undefined,
-        },
-      });
+  try {
+    const res = await api.get("/products", {
+      params: {
+        limit: 12,
+        lastCreatedAt: reset ? undefined : lastCreatedAt,
+        minPrice: priceFilter.min,
+        maxPrice: priceFilter.max,
+        search: search || undefined,
+      },
+    });
 
-      let newProducts = res.data.products || [];
+    // ✅ DEBUG: Full response
+    console.log("🔥 API RAW RESPONSE:", res.data);
 
-      const existingIds = new Set(products.map((p) => p._id));
-      newProducts = newProducts.filter((p) => !existingIds.has(p._id));
+    // ✅ DEBUG: Product names list
+    console.log(
+      "📦 Product names:",
+      res.data.products?.map((p) => `${p.name} - ${p.price}`)
+    );
 
-      setProducts((prev) => (reset ? newProducts : [...prev, ...newProducts]));
-      setHasMore(res.data.hasMore);
+    // ✅ DEBUG: Check specifically for Apple Thooku
+    const apple = res.data.products?.find((p) =>
+      p.name.toLowerCase().includes("apple")
+    );
+    console.log("🍎 Apple product from API:", apple);
 
-      if (newProducts.length > 0) {
-        setLastCreatedAt(newProducts[newProducts.length - 1].createdAt);
-      }
-    } catch (err) {
-      console.error("Fetch error:", err);
-    } finally {
-      setLoading(false);
-      loadingRef.current = false;
+    let newProducts = res.data.products || [];
+
+    // ✅ DEBUG: Before deduplication
+    console.log("🟡 Before dedupe:", newProducts.length);
+
+    const existingIds = new Set(products.map((p) => p._id));
+    newProducts = newProducts.filter((p) => !existingIds.has(p._id));
+
+    // ✅ DEBUG: After deduplication
+    console.log("🟢 After dedupe:", newProducts.length);
+
+    setProducts((prev) => (reset ? newProducts : [...prev, ...newProducts]));
+    setHasMore(res.data.hasMore);
+
+    if (newProducts.length > 0) {
+      console.log(
+        "⏱ lastCreatedAt set to:",
+        newProducts[newProducts.length - 1]
+      );
+      setLastCreatedAt(newProducts[newProducts.length - 1].createdAt);
     }
-  };
+  } catch (err) {
+    console.error("❌ Fetch error:", err);
+  } finally {
+    setLoading(false);
+    loadingRef.current = false;
+  }
+};
 
   const handleSearchChange = (e) => {
     const value = e.target.value;

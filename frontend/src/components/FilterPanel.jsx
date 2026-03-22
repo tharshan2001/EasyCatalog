@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 
-export default function FilterPanel({ onFilter, minLimit = 0, maxLimit = 10000 }) {
+export default function FilterPanel({ onFilter, minLimit = 0, maxLimit = 100000 }) {
   const [minValue, setMinValue] = useState(minLimit);
   const [maxValue, setMaxValue] = useState(maxLimit);
 
