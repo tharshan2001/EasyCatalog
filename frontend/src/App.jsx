@@ -10,6 +10,7 @@ import AdminLayout from "./layout/AdminLayout.jsx";
 import AdminRoute from "./routes/AdminRoute.jsx";
 import DashboardPage from "./Pages/DashboardPage.jsx";
 import ProductListAdmin from "./components/admin/ProductListAdmin.jsx";
+import CategoryListAdmin from "./components/admin/CategoryListAdmin.jsx";
 
 const App = () => {
   return (
@@ -35,6 +36,7 @@ const App = () => {
           <Route element={<AdminLayout />}>
             <Route path="/admin/dashboard" element={<DashboardPage />} />
             <Route path="/admin/products" element={<ProductListAdmin />} />
+            <Route path="/admin/categories" element={<CategoryListAdmin />} />
           </Route>
         </Route>
       </Routes>

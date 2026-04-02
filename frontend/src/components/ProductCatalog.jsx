@@ -6,6 +6,7 @@ import api from "../store/api";
 
 export default function ProductCatalog() {
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [lastCreatedAt, setLastCreatedAt] = useState(null);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -14,6 +15,7 @@ export default function ProductCatalog() {
   const [priceFilter, setPriceFilter] = useState({ min: 0, max: 100000 });
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
 
   const [scrolled, setScrolled] = useState(false);
 
@@ -30,65 +32,79 @@ export default function ProductCatalog() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Fetch categories
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await api.get("/categories");
+        setCategories(res.data?.categories ?? []);
+      } catch (err) {
+        console.error("Failed to fetch categories:", err);
+      }
+    };
+    fetchCategories();
+  }, []);
+
  const fetchProducts = async (reset = false) => {
-  if (loadingRef.current || (!hasMore && !reset)) return;
-  loadingRef.current = true;
-  setLoading(true);
+   if (loadingRef.current || (!hasMore && !reset)) return;
+   loadingRef.current = true;
+   setLoading(true);
 
-  try {
-    const res = await api.get("/products", {
-      params: {
-        limit: 12,
-        lastCreatedAt: reset ? undefined : lastCreatedAt,
-        minPrice: priceFilter.min,
-        maxPrice: priceFilter.max,
-        search: search || undefined,
-      },
-    });
+   try {
+     const res = await api.get("/products", {
+       params: {
+         limit: 12,
+         lastCreatedAt: reset ? undefined : lastCreatedAt,
+         minPrice: priceFilter.min,
+         maxPrice: priceFilter.max,
+         search: search || undefined,
+         category: selectedCategory || undefined,
+       },
+     });
 
-    // ✅ DEBUG: Full response
-    console.log("🔥 API RAW RESPONSE:", res.data);
+     // ✅ DEBUG: Full response
+     console.log("🔥 API RAW RESPONSE:", res.data);
 
-    // ✅ DEBUG: Product names list
-    console.log(
-      "📦 Product names:",
-      res.data.products?.map((p) => `${p.name} - ${p.price}`)
-    );
+     // ✅ DEBUG: Product names list
+     console.log(
+       "📦 Product names:",
+       res.data.products?.map((p) => `${p.name} - ${p.price}`)
+     );
 
-    // ✅ DEBUG: Check specifically for Apple Thooku
-    const apple = res.data.products?.find((p) =>
-      p.name.toLowerCase().includes("apple")
-    );
-    console.log("🍎 Apple product from API:", apple);
+     // ✅ DEBUG: Check specifically for Apple Thooku
+     const apple = res.data.products?.find((p) =>
+       p.name.toLowerCase().includes("apple")
+     );
+     console.log("🍎 Apple product from API:", apple);
 
-    let newProducts = res.data.products || [];
+     let newProducts = res.data.products || [];
 
-    // ✅ DEBUG: Before deduplication
-    console.log("🟡 Before dedupe:", newProducts.length);
+     // ✅ DEBUG: Before deduplication
+     console.log("🟡 Before dedupe:", newProducts.length);
 
-    const existingIds = new Set(products.map((p) => p._id));
-    newProducts = newProducts.filter((p) => !existingIds.has(p._id));
+     const existingIds = new Set(products.map((p) => p._id));
+     newProducts = newProducts.filter((p) => !existingIds.has(p._id));
 
-    // ✅ DEBUG: After deduplication
-    console.log("🟢 After dedupe:", newProducts.length);
+     // ✅ DEBUG: After deduplication
+     console.log("🟢 After dedupe:", newProducts.length);
 
-    setProducts((prev) => (reset ? newProducts : [...prev, ...newProducts]));
-    setHasMore(res.data.hasMore);
+     setProducts((prev) => (reset ? newProducts : [...prev, ...newProducts]));
+     setHasMore(res.data.hasMore);
 
-    if (newProducts.length > 0) {
-      console.log(
-        "⏱ lastCreatedAt set to:",
-        newProducts[newProducts.length - 1]
-      );
-      setLastCreatedAt(newProducts[newProducts.length - 1].createdAt);
-    }
-  } catch (err) {
-    console.error("❌ Fetch error:", err);
-  } finally {
-    setLoading(false);
-    loadingRef.current = false;
-  }
-};
+     if (newProducts.length > 0) {
+       console.log(
+         "⏱ lastCreatedAt set to:",
+         newProducts[newProducts.length - 1]
+       );
+       setLastCreatedAt(newProducts[newProducts.length - 1].createdAt);
+     }
+   } catch (err) {
+     console.error("❌ Fetch error:", err);
+   } finally {
+     setLoading(false);
+     loadingRef.current = false;
+   }
+ };
 
   const handleSearchChange = (e) => {
     const value = e.target.value;
@@ -105,7 +121,14 @@ export default function ProductCatalog() {
 
   useEffect(() => {
     fetchProducts(true);
-  }, [search, priceFilter]);
+  }, [search, priceFilter, selectedCategory]);
+
+  const handleCategoryChange = (categoryId) => {
+    setSelectedCategory(categoryId);
+    setProducts([]);
+    setLastCreatedAt(null);
+    setHasMore(true);
+  };
 
   const lastProductRef = useCallback(
     (node) => {
@@ -214,14 +237,50 @@ export default function ProductCatalog() {
 
           {/* Sidebar */}
           <aside className="hidden lg:block w-64">
-            <FilterPanel
-              onFilter={(f) => {
-                setPriceFilter(f);
-                setProducts([]);
-                setLastCreatedAt(null);
-                setHasMore(true);
-              }}
-            />
+            <div className="space-y-6">
+              {/* Category Filter */}
+              {categories.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wider mb-4">
+                    Categories
+                  </h3>
+                  <div className="bg-stone-100 p-4 rounded-2xl border border-stone-200/50 space-y-2">
+                    <button
+                      onClick={() => handleCategoryChange("")}
+                      className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+                        selectedCategory === ""
+                          ? "bg-yellow-400 text-white font-medium"
+                          : "text-stone-600 hover:bg-stone-200"
+                      }`}
+                    >
+                      All Products
+                    </button>
+                    {categories.map((cat) => (
+                      <button
+                        key={cat._id}
+                        onClick={() => handleCategoryChange(cat._id)}
+                        className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+                          selectedCategory === cat._id
+                            ? "bg-yellow-400 text-white font-medium"
+                            : "text-stone-600 hover:bg-stone-200"
+                        }`}
+                      >
+                        {cat.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              <FilterPanel
+                onFilter={(f) => {
+                  setPriceFilter(f);
+                  setProducts([]);
+                  setLastCreatedAt(null);
+                  setHasMore(true);
+                }}
+              />
+            </div>
           </aside>
 
           {/* Mobile Filters */}

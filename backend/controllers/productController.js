@@ -5,7 +5,7 @@ import slugify from "slug";
 // ---------------- Create Product ----------------
 export const createProduct = async (req, res) => {
   try {
-    const { code, name, tags, price } = req.body;
+    const { code, name, tags, price, category } = req.body;
     let image_url = "";
 
     if (!name) {
@@ -46,6 +46,7 @@ export const createProduct = async (req, res) => {
       tags: tags ? tags.split(",").map((t) => t.trim()) : [],
       price: Number(price),
       archived: false,
+      category: category || null,
     });
 
     res.status(201).json({ message: "Product created", product });
@@ -64,6 +65,7 @@ export const getProducts = async (req, res) => {
     const minPrice = req.query.minPrice ? Number(req.query.minPrice) : null;
     const maxPrice = req.query.maxPrice ? Number(req.query.maxPrice) : null;
     const search = req.query.search ? req.query.search.trim() : null;
+    const categoryId = req.query.category || null;
 
     const filter = { archived: false };
 
@@ -85,9 +87,15 @@ export const getProducts = async (req, res) => {
       ];
     }
 
+    // Category filter
+    if (categoryId) {
+      filter.category = categoryId;
+    }
+
     const products = await Product.find(filter)
       .sort({ createdAt: -1 })
-      .select('_id code name slug image_url tags price') 
+      .select('_id code name slug image_url tags price category') 
+      .populate('category', 'name slug')
       .limit(limit);
 
     res.json({
@@ -111,7 +119,8 @@ export const getProductsAdmin = async (req, res) => {
 
     const products = await Product.find(filter)
       .sort({ createdAt: -1 })
-      .select("_id code name slug image_url tags archived price createdAt") // include price
+      .select("_id code name slug image_url tags archived price createdAt category")
+      .populate('category', 'name slug')
       .limit(limit);
 
     res.json({
@@ -128,7 +137,7 @@ export const getProductsAdmin = async (req, res) => {
 export const updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
-    const { code, name, slug, tags, archived, price } = req.body;
+    const { code, name, slug, tags, archived, price, category } = req.body;
     let image_url;
 
     if (req.file) {
@@ -143,6 +152,7 @@ export const updateProduct = async (req, res) => {
       ...(archived !== undefined && { archived }),
       ...(price !== undefined && { price: Number(price) }),
       ...(image_url && { image_url }),
+      ...(category !== undefined && { category: category || null }),
     };
 
     const product = await Product.findByIdAndUpdate(id, updatedData, { new: true });

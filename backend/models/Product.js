@@ -6,9 +6,10 @@ const productSchema = new mongoose.Schema(
     name: { type: String, required: true, trim: true },
     slug: { type: String, required: true, unique: true, trim: true },
     image_url: { type: String, trim: true },
-    tags: [{ type: String }], // optional array of tags
-    archived: { type: Boolean, default: false }, // default not archived
-    price: { type: Number, required: true, min: 0 }, // added price field
+    tags: [{ type: String }],
+    category: { type: mongoose.Schema.Types.ObjectId, ref: "Category" },
+    archived: { type: Boolean, default: false },
+    price: { type: Number, required: true, min: 0 },
   },
   { timestamps: true }
 );

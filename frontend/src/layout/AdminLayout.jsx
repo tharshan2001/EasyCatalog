@@ -4,13 +4,11 @@ import Sidebar from "../components/Sidebar";
 
 const AdminLayout = () => {
   return (
-    <div className="flex h-screen bg-slate-50">
-      {/* Sidebar */}
+    <div className="flex h-screen bg-[#F4F6FA]">
       <Sidebar />
 
-      {/* Main Content */}
       <main className="flex-1 overflow-auto p-6">
-        <Outlet /> {/* Render nested admin routes here */}
+        <Outlet />
       </main>
     </div>
   );

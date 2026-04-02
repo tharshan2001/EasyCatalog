@@ -5,7 +5,6 @@ import {
   Plus,
   PackageOpen,
   X,
-  PackagePlus,
   Upload,
   Image as ImageIcon,
   AlertCircle as AlertIcon
@@ -16,6 +15,7 @@ import Swal from "sweetalert2";
 
 export default function ProductListAdmin() {
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [scrollLoading, setScrollLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -23,7 +23,7 @@ export default function ProductListAdmin() {
   const [hasMore, setHasMore] = useState(true);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [formData, setFormData] = useState({ code: "", name: "", tags: "", price: "" });
+  const [formData, setFormData] = useState({ code: "", name: "", tags: "", price: "", category: "" });
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
   const [formLoading, setFormLoading] = useState(false);
@@ -31,10 +31,19 @@ export default function ProductListAdmin() {
   const observer = useRef();
   const scrollContainerRef = useRef(null);
 
-  // Load products on mount
   useEffect(() => {
     loadProducts();
+    loadCategories();
   }, []);
+
+  const loadCategories = async () => {
+    try {
+      const response = await api.get("categories");
+      setCategories(response.data?.categories ?? []);
+    } catch (err) {
+      console.error("Failed to load categories:", err);
+    }
+  };
 
   useEffect(() => {
     return () => {
@@ -57,7 +66,7 @@ export default function ProductListAdmin() {
           ...item,
           tags: item.tags ?? [],
           image_url: item.image_url ?? "",
-          archived: item.archived ?? false, // rely on backend
+          archived: item.archived ?? false,
         }));
 
       if (cursor) {
@@ -74,7 +83,7 @@ export default function ProductListAdmin() {
       setHasMore(more);
     } catch (err) {
       console.error("Failed to fetch products:", err);
-      setError("The archive could not be reached at this time.");
+      setError("Failed to load products.");
       setHasMore(false);
       toast.error("Failed to load products");
     } finally {
@@ -108,8 +117,8 @@ export default function ProductListAdmin() {
       text: "Do you really want to remove this product?",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
+      confirmButtonColor: "#0a66c2",
+      cancelButtonColor: "#6b7280",
       confirmButtonText: "Yes, delete it!",
     });
 
@@ -125,14 +134,12 @@ export default function ProductListAdmin() {
     }
   };
 
-  // Archive handler – relies fully on backend to persist status
   const handleArchive = async (_id) => {
     const product = products.find(p => p._id === _id);
     if (!product) return;
 
     const newStatus = !product.archived;
 
-    // Optimistic update
     setProducts(prev =>
       prev.map(p => (p._id === _id ? { ...p, archived: newStatus } : p))
     );
@@ -143,14 +150,12 @@ export default function ProductListAdmin() {
     } catch (err) {
       console.error("Archive failed:", err);
       Swal.fire("Failed", "Status update failed.", "error");
-      // Revert on failure
       setProducts(prev =>
         prev.map(p => (p._id === _id ? { ...p, archived: product.archived } : p))
       );
     }
   };
 
-  // Modal handlers
   const handleChange = e => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -178,10 +183,9 @@ export default function ProductListAdmin() {
       });
 
       toast.success("Product created successfully!");
-      setFormData({ code: "", name: "", tags: "", price: "" });
+      setFormData({ code: "", name: "", tags: "", price: "", category: "" });
       setFile(null);
       setPreview(null);
-
       loadProducts();
       setTimeout(() => setIsModalOpen(false), 1000);
     } catch (err) {
@@ -192,52 +196,50 @@ export default function ProductListAdmin() {
     }
   };
 
-  const inputStyle = "w-full border border-stone-200 bg-stone-50/50 px-3 py-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm transition-all";
-  const labelStyle = "block text-[11px] font-bold text-stone-400 uppercase tracking-wider mb-1.5";
+  const inputStyle = "w-full border border-[#E0E4EB] bg-white px-3 py-2 rounded-md outline-none focus:ring-2 focus:ring-[#4A90E2]/20 focus:border-[#4A90E2] text-sm transition-all";
+  const labelStyle = "block text-xs font-semibold text-[#7F8C9D] uppercase tracking-wider mb-1.5";
 
   return (
-    <div className="bg-sky-50 h-[700px] p-4 lg:p-12">
+    <div className="bg-[#F4F6FA] h-[700px] p-4 lg:p-12">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-4 pb-8">
           <div>
-            <h1 className="text-2xl font-serif text-sky-900">Inventory Manager</h1>
-            <p className="text-[10px] uppercase tracking-[0.3em] text-slate-400 mt-2 font-bold">
+            <h1 className="text-2xl font-bold text-[#2C3E50]">Inventory Manager</h1>
+            <p className="text-[10px] uppercase tracking-[0.3em] text-[#7F8C9D] mt-2 font-bold">
               {products?.length ?? 0} Products in Collection
             </p>
           </div>
 
           <button
             onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-2 bg-sky-500 hover:bg-sky-600 transition-colors text-white px-8 py-4 text-[8px] font-bold uppercase tracking-[0.2em]"
+            className="flex items-center gap-2 bg-[#4A90E2] hover:bg-[#357ABD] text-white px-8 py-4 text-[8px] font-bold uppercase tracking-[0.2em] transition-colors"
           >
             <Plus size={14} /> New Product
           </button>
         </div>
 
-        {/* Products Table */}
         {error ? (
-          <div className="bg-red-50 border-l-2 border-red-400 p-4 flex items-center gap-4 text-red-800 italic">
+          <div className="bg-red-50 border-l-2 border-[#E74C3C] p-4 flex items-center gap-4 text-[#E74C3C]">
             <AlertIcon size={20} /> {error}
           </div>
         ) : products.length === 0 ? (
-          <div className="text-center py-32 bg-white border border-dashed border-slate-200">
-            <PackageOpen size={48} className="mx-auto text-slate-300 mb-4" />
-            <p className="font-serif italic text-slate-400">The archive is currently empty.</p>
+          <div className="text-center py-32 bg-white border border-dashed border-[#E0E4EB]">
+            <PackageOpen size={48} className="mx-auto text-[#7F8C9D] mb-4" />
+            <p className="font-medium text-[#7F8C9D]">The archive is currently empty.</p>
           </div>
         ) : (
           <div ref={scrollContainerRef} className="bg-white overflow-y-auto max-h-[500px]">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="sticky top-0 bg-sky-50 border-b border-slate-200">
-                  <th className="p-5 text-[10px] uppercase tracking-[0.2em] text-slate-400 font-bold">Product</th>
-                  <th className="p-5 text-[10px] uppercase tracking-[0.2em] text-slate-400 font-bold">Tags</th>
-                  <th className="p-5 text-[10px] uppercase tracking-[0.2em] text-slate-400 font-bold">Price</th>
-                  <th className="p-5 text-[10px] uppercase tracking-[0.2em] text-slate-400 font-bold">Status</th>
-                  <th className="p-5 text-[10px] uppercase tracking-[0.2em] text-slate-400 font-bold text-right">Management</th>
+                <tr className="sticky top-0 bg-[#F4F6FA] border-b border-[#E0E4EB]">
+                  <th className="p-5 text-[10px] uppercase tracking-[0.2em] text-[#7F8C9D] font-bold">Product</th>
+                  <th className="p-5 text-[10px] uppercase tracking-[0.2em] text-[#7F8C9D] font-bold">Tags</th>
+                  <th className="p-5 text-[10px] uppercase tracking-[0.2em] text-[#7F8C9D] font-bold">Price</th>
+                  <th className="p-5 text-[10px] uppercase tracking-[0.2em] text-[#7F8C9D] font-bold">Status</th>
+                  <th className="p-5 text-[10px] uppercase tracking-[0.2em] text-[#7F8C9D] font-bold text-right">Management</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-[#E0E4EB]">
                 {products.map((product, index) => (
                   <ProductCardAdmin
                     key={product._id}
@@ -252,36 +254,34 @@ export default function ProductListAdmin() {
 
             {scrollLoading && (
               <div className="flex justify-center py-4">
-                <Loader2 className="animate-spin text-sky-500" size={24} />
+                <Loader2 className="animate-spin text-[#4A90E2]" size={24} />
               </div>
             )}
           </div>
         )}
       </div>
 
-      {/* Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50">
-          <div className="bg-white rounded-2xl w-full max-w-4xl p-8 relative">
+          <div className="bg-white rounded-lg w-full max-w-4xl p-8 relative">
             <button
               onClick={() => setIsModalOpen(false)}
-              className="absolute top-4 right-4 p-2 rounded-full hover:bg-stone-100 transition-all"
+              className="absolute top-4 right-4 p-2 rounded-full hover:bg-[#F4F6FA] transition-all"
             >
               <X size={20} />
             </button>
 
             <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-                <PackagePlus size={20} />
+              <div className="p-2 bg-[#4A90E2]/10 text-[#4A90E2] rounded-lg">
+                <Plus size={20} />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-stone-800">New Product</h2>
-                <p className="text-xs text-stone-500">Add a new item to your catalog</p>
+                <h2 className="text-lg font-bold text-[#2C3E50]">New Product</h2>
+                <p className="text-xs text-[#7F8C9D]">Add a new item to your catalog</p>
               </div>
             </div>
 
             <form onSubmit={handleFormSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* Left Column */}
               <div className="space-y-5">
                 <div>
                   <label className={labelStyle}>Product Code</label>
@@ -298,37 +298,52 @@ export default function ProductListAdmin() {
                 <div>
                   <label className={labelStyle}>Tags</label>
                   <input type="text" name="tags" value={formData.tags} onChange={handleChange} className={inputStyle} />
-                  <p className="mt-1.5 text-[10px] text-stone-400">Separate tags with commas</p>
+                  <p className="mt-1.5 text-[10px] text-[#7F8C9D]">Separate tags with commas</p>
                 </div>
-                <div className="pt-4 border-t border-stone-100">
-                  <button type="submit" disabled={formLoading} className="w-full bg-blue-500 text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2 disabled:opacity-50 transition-all">
+                <div>
+                  <label className={labelStyle}>Category</label>
+                  <select
+                    name="category"
+                    value={formData.category}
+                    onChange={handleChange}
+                    className={inputStyle}
+                  >
+                    <option value="">No Category</option>
+                    {categories.map((cat) => (
+                      <option key={cat._id} value={cat._id}>
+                        {cat.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="pt-4 border-t border-[#E0E4EB]">
+                  <button type="submit" disabled={formLoading} className="w-full bg-[#4A90E2] text-white font-semibold py-3 rounded-lg flex items-center justify-center gap-2 disabled:opacity-50 transition-all hover:bg-[#357ABD]">
                     {formLoading ? <Loader2 size={18} className="animate-spin" /> : "Create Product"}
                   </button>
                 </div>
               </div>
 
-              {/* Right Column: Image */}
               <div className="flex flex-col">
                 <label className={labelStyle}>Product Image</label>
                 <div className="relative flex-1 min-h-[240px] group">
                   {!preview ? (
-                    <div className="absolute inset-0 border-2 border-dashed border-stone-200 rounded-2xl flex flex-col items-center justify-center bg-stone-50/50 group-hover:bg-stone-50 group-hover:border-blue-400 transition-all">
+                    <div className="absolute inset-0 border-2 border-dashed border-[#E0E4EB] rounded-lg flex flex-col items-center justify-center bg-[#F4F6FA] group-hover:bg-white group-hover:border-[#4A90E2] transition-all">
                       <input type="file" accept="image/*" onChange={handleFileChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" />
                       <div className="p-4 rounded-full bg-white shadow-sm mb-3 group-hover:scale-110 transition-transform">
-                        <Upload className="text-stone-400 group-hover:text-blue-500" size={24} />
+                        <Upload className="text-[#7F8C9D] group-hover:text-[#4A90E2]" size={24} />
                       </div>
-                      <p className="text-sm font-medium text-stone-600">Click to upload</p>
-                      <p className="text-xs text-stone-400 mt-1">PNG, JPG up to 10MB</p>
+                      <p className="text-sm font-medium text-[#2C3E50]">Click to upload</p>
+                      <p className="text-xs text-[#7F8C9D] mt-1">PNG, JPG up to 10MB</p>
                     </div>
                   ) : (
-                    <div className="absolute inset-0 rounded-2xl overflow-hidden border border-stone-200 bg-stone-100">
-                      <img src={preview} alt="Preview" className="w-full h-full object-fit p-5" />
-                      <button type="button" onClick={() => { setFile(null); setPreview(null); }} className="absolute top-3 right-3 p-2 bg-white/90 text-red-500 rounded-full shadow-lg">
+                    <div className="absolute inset-0 rounded-lg overflow-hidden border border-[#E0E4EB] bg-[#F4F6FA]">
+                      <img src={preview} alt="Preview" className="w-full h-full object-contain p-5" />
+                      <button type="button" onClick={() => { setFile(null); setPreview(null); }} className="absolute top-3 right-3 p-2 bg-white text-[#E74C3C] rounded-full shadow-lg">
                         <X size={16} />
                       </button>
                     </div>
                   )}
-                  {!preview && <div className="mt-2 flex items-center gap-2 text-stone-400 italic text-[11px]"><ImageIcon size={12} /> No image selected</div>}
+                  {!preview && <div className="mt-2 flex items-center gap-2 text-[#7F8C9D] text-[11px]"><ImageIcon size={12} /> No image selected</div>}
                 </div>
               </div>
             </form>
