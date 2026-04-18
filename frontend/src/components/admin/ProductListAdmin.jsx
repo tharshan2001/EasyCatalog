@@ -31,11 +31,6 @@ export default function ProductListAdmin() {
   const observer = useRef();
   const scrollContainerRef = useRef(null);
 
-  useEffect(() => {
-    loadProducts();
-    loadCategories();
-  }, []);
-
   const loadCategories = async () => {
     try {
       const response = await api.get("categories");
@@ -46,6 +41,8 @@ export default function ProductListAdmin() {
   };
 
   useEffect(() => {
+    loadProducts();
+    loadCategories();
     return () => {
       if (observer.current) observer.current.disconnect();
     };
@@ -94,21 +91,21 @@ export default function ProductListAdmin() {
 
   const lastProductRef = useCallback(
     node => {
-      if (scrollLoading) return;
-      if (observer.current) observer.current.disconnect();
-
-      observer.current = new IntersectionObserver(
+      if (!node || !hasMore) return;
+      
+      const obs = new IntersectionObserver(
         entries => {
           if (entries[0].isIntersecting && hasMore && !scrollLoading) {
             loadProducts(nextCursor);
           }
         },
-        { root: scrollContainerRef.current, threshold: 0.1 }
+        { rootMargin: "200px" }
       );
 
-      if (node) observer.current.observe(node);
+      obs.observe(node);
+      return () => obs.disconnect();
     },
-    [scrollLoading, hasMore, nextCursor]
+    [hasMore, nextCursor]
   );
 
   const handleDelete = async (_id) => {
@@ -229,7 +226,7 @@ export default function ProductListAdmin() {
           </div>
         ) : (
           <div ref={scrollContainerRef} className="bg-white overflow-y-auto max-h-[500px]">
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left border-collapse pl-10">
               <thead>
                 <tr className="sticky top-0 bg-[#F4F6FA] border-b border-[#E0E4EB]">
                   <th className="p-5 text-[10px] uppercase tracking-[0.2em] text-[#7F8C9D] font-bold">Product</th>
