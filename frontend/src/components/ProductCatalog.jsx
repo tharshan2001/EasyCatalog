@@ -9,7 +9,6 @@ export default function ProductCatalog() {
   const [categories, setCategories] = useState([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
-  const [loading, setLoading] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   const [priceFilter, setPriceFilter] = useState({ min: 0, max: 100000 });
@@ -45,35 +44,30 @@ export default function ProductCatalog() {
   }, []);
 
 const fetchProducts = async () => {
-    if (loadingRef.current) return;
-    
-    loadingRef.current = true;
-    setLoading(true);
-
     try {
-      const res = await api.get("/products", {
-        params: {
-          limit: 12,
-          page: page,
-          minPrice: priceFilter.min,
-          maxPrice: priceFilter.max,
-          search: search || undefined,
-          category: selectedCategory || undefined,
-        },
-      });
-
-      const newProducts = res.data.products || [];
-
+      if (loadingRef.current) return;
+      if (!hasMore && page > 1) return;
+      
+      loadingRef.current = true;
+      
+      const params = { limit: 12, page };
+      if (search) params.search = search;
+      if (selectedCategory) params.category = selectedCategory;
+      if (priceFilter.min > 0) params.minPrice = priceFilter.min;
+      if (priceFilter.max < 100000) params.maxPrice = priceFilter.max;
+      
+      const res = await api.get("/products", { params });
+      const data = res.data;
+      
       if (page === 1) {
-        setProducts(newProducts);
+        setProducts(data.products || []);
       } else {
-        setProducts((prev) => [...prev, ...newProducts]);
+        setProducts((prev) => [...prev, ...(data.products || [])]);
       }
-      setHasMore(res.data.hasMore);
+      setHasMore(data.hasMore);
     } catch (err) {
       console.error("Fetch error:", err);
     } finally {
-      setLoading(false);
       loadingRef.current = false;
     }
   };
@@ -82,7 +76,7 @@ const fetchProducts = async () => {
     fetchProducts();
   }, [page, search, priceFilter, selectedCategory]);
 
-  const handleLoadMore = () => {
+const handleLoadMore = () => {
     if (!loadingRef.current && hasMore) {
       setPage((p) => p + 1);
     }
@@ -198,7 +192,7 @@ const fetchProducts = async () => {
 
           {/* Sidebar */}
           <aside className="hidden lg:block w-64">
-            <div className="space-y-6">
+            <div className="sticky top-24 space-y-6">
               {/* Category Filter */}
               {categories.length > 0 && (
                 <div>
@@ -251,7 +245,7 @@ const fetchProducts = async () => {
                 className="fixed inset-0 bg-black/20"
                 onClick={() => setIsFilterOpen(false)}
               />
-              <div className="fixed left-0 top-0 h-full w-72 bg-white p-6 shadow-xl">
+              <div className="fixed left-0 top-0 w-72 bg-white p-8 shadow-xl">
                 <div className="flex justify-between mb-6">
                   <h2 className="text-lg font-bold">Filters</h2>
                   <button onClick={() => setIsFilterOpen(false)}>
@@ -273,6 +267,9 @@ const fetchProducts = async () => {
 
           {/* Products */}
           <div className="flex-1">
+            <div className="text-xs text-gray-500 mb-2">
+              Showing {products.length} products (page {page})
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
               {products.map((product) => (
                 <div key={product._id}>
@@ -281,13 +278,13 @@ const fetchProducts = async () => {
               ))}
             </div>
 
-            {loading && (
+            {loadingRef.current && (
               <div className="flex justify-center py-12">
                 <div className="w-8 h-8 border-4 border-yellow-400 border-t-transparent rounded-full animate-spin" />
               </div>
             )}
 
-            {hasMore && !loading && (
+            {hasMore && !loadingRef.current && (
               <div className="flex justify-center py-8">
                 <button
                   onClick={handleLoadMore}
@@ -305,7 +302,7 @@ const fetchProducts = async () => {
               </p>
             )}
 
-            {!loading && products.length === 0 && (
+            {!loadingRef.current && products.length === 0 && (
               <p className="text-center py-12 text-stone-400">
                 No products found
               </p>

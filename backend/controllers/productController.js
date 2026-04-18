@@ -68,7 +68,7 @@ export const getProducts = async (req, res) => {
     const search = req.query.search ? req.query.search.trim() : null;
     const categoryId = req.query.category || null;
 
-    const filter = { archived: false };
+    const filter = { archived: { $ne: true } };
 
     // Price filter
     if (minPrice !== null || maxPrice !== null) {
@@ -102,14 +102,14 @@ export const getProducts = async (req, res) => {
 
     const [products, total] = await Promise.all([
       Product.find(filter)
-        .sort({ createdAt: -1 })
+        .sort({ createdAt: -1, _id: 1 })
         .select('_id code name slug image_url tags price category') 
         .populate('category', 'name slug')
         .skip(skip)
         .limit(limit),
       Product.countDocuments(filter)
     ]);
-
+    
     res.json({
       products,
       hasMore: skip + products.length < total,
