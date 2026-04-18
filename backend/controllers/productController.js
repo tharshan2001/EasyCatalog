@@ -60,17 +60,15 @@ export const createProduct = async (req, res) => {
 // controllers/productController.js
 export const getProducts = async (req, res) => {
   try {
-    const limit = parseInt(req.query.limit) || 10;
-    const lastCreatedAt = req.query.lastCreatedAt ? new Date(req.query.lastCreatedAt) : null;
+    const limit = parseInt(req.query.limit) || 12;
+    const page = parseInt(req.query.page) || 1;
+    const skip = (page - 1) * limit;
     const minPrice = req.query.minPrice ? Number(req.query.minPrice) : null;
     const maxPrice = req.query.maxPrice ? Number(req.query.maxPrice) : null;
     const search = req.query.search ? req.query.search.trim() : null;
     const categoryId = req.query.category || null;
 
     const filter = { archived: false };
-
-    // Cursor for infinite scroll
-    if (lastCreatedAt) filter.createdAt = { $lt: lastCreatedAt };
 
     // Price filter
     if (minPrice !== null || maxPrice !== null) {
@@ -79,28 +77,45 @@ export const getProducts = async (req, res) => {
       if (maxPrice !== null) filter.price.$lte = maxPrice;
     }
 
-    // Search filter (name or code)
+    // Search filter - search in name, code, tags
     if (search) {
-      filter.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { code: { $regex: search, $options: 'i' } }
+      const searchRegex = new RegExp(search, 'i');
+      filter.$and = [
+        {
+          $or: [
+            { name: searchRegex },
+            { code: searchRegex },
+            { tags: searchRegex }
+          ]
+        }
       ];
     }
 
     // Category filter
     if (categoryId) {
-      filter.category = categoryId;
+      if (search) {
+        filter.$and.push({ category: categoryId });
+      } else {
+        filter.category = categoryId;
+      }
     }
 
-    const products = await Product.find(filter)
-      .sort({ createdAt: -1 })
-      .select('_id code name slug image_url tags price category') 
-      .populate('category', 'name slug')
-      .limit(limit);
+    const [products, total] = await Promise.all([
+      Product.find(filter)
+        .sort({ createdAt: -1 })
+        .select('_id code name slug image_url tags price category') 
+        .populate('category', 'name slug')
+        .skip(skip)
+        .limit(limit),
+      Product.countDocuments(filter)
+    ]);
 
     res.json({
       products,
-      hasMore: products.length === limit,
+      hasMore: skip + products.length < total,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
     });
   } catch (error) {
     console.error(error);

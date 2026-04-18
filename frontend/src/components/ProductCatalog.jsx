@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useRef, useCallback } from "react";
-import { LayoutGrid, Search, SlidersHorizontal, X } from "lucide-react";
+import React, { useEffect, useState, useRef } from "react";
+import { LayoutGrid, Search, SlidersHorizontal, X, ChevronDown } from "lucide-react";
 import ProductCard from "./ProductCard";
 import FilterPanel from "./FilterPanel";
 import api from "../store/api";
@@ -7,7 +7,7 @@ import api from "../store/api";
 export default function ProductCatalog() {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [lastCreatedAt, setLastCreatedAt] = useState(null);
+  const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -19,7 +19,6 @@ export default function ProductCatalog() {
 
   const [scrolled, setScrolled] = useState(false);
 
-  const observer = useRef();
   const loadingRef = useRef(false);
   const debounceRef = useRef(null);
 
@@ -45,66 +44,49 @@ export default function ProductCatalog() {
     fetchCategories();
   }, []);
 
- const fetchProducts = async (reset = false) => {
-   if (loadingRef.current || (!hasMore && !reset)) return;
-   loadingRef.current = true;
-   setLoading(true);
+const fetchProducts = async () => {
+    if (loadingRef.current) return;
+    
+    loadingRef.current = true;
+    setLoading(true);
 
-   try {
-     const res = await api.get("/products", {
-       params: {
-         limit: 12,
-         lastCreatedAt: reset ? undefined : lastCreatedAt,
-         minPrice: priceFilter.min,
-         maxPrice: priceFilter.max,
-         search: search || undefined,
-         category: selectedCategory || undefined,
-       },
-     });
+    try {
+      const res = await api.get("/products", {
+        params: {
+          limit: 12,
+          page: page,
+          minPrice: priceFilter.min,
+          maxPrice: priceFilter.max,
+          search: search || undefined,
+          category: selectedCategory || undefined,
+        },
+      });
 
-     // ✅ DEBUG: Full response
-     console.log("🔥 API RAW RESPONSE:", res.data);
+      const newProducts = res.data.products || [];
 
-     // ✅ DEBUG: Product names list
-     console.log(
-       "📦 Product names:",
-       res.data.products?.map((p) => `${p.name} - ${p.price}`)
-     );
+      if (page === 1) {
+        setProducts(newProducts);
+      } else {
+        setProducts((prev) => [...prev, ...newProducts]);
+      }
+      setHasMore(res.data.hasMore);
+    } catch (err) {
+      console.error("Fetch error:", err);
+    } finally {
+      setLoading(false);
+      loadingRef.current = false;
+    }
+  };
 
-     // ✅ DEBUG: Check specifically for Apple Thooku
-     const apple = res.data.products?.find((p) =>
-       p.name.toLowerCase().includes("apple")
-     );
-     console.log("🍎 Apple product from API:", apple);
+  useEffect(() => {
+    fetchProducts();
+  }, [page, search, priceFilter, selectedCategory]);
 
-     let newProducts = res.data.products || [];
-
-     // ✅ DEBUG: Before deduplication
-     console.log("🟡 Before dedupe:", newProducts.length);
-
-     const existingIds = new Set(products.map((p) => p._id));
-     newProducts = newProducts.filter((p) => !existingIds.has(p._id));
-
-     // ✅ DEBUG: After deduplication
-     console.log("🟢 After dedupe:", newProducts.length);
-
-     setProducts((prev) => (reset ? newProducts : [...prev, ...newProducts]));
-     setHasMore(res.data.hasMore);
-
-     if (newProducts.length > 0) {
-       console.log(
-         "⏱ lastCreatedAt set to:",
-         newProducts[newProducts.length - 1]
-       );
-       setLastCreatedAt(newProducts[newProducts.length - 1].createdAt);
-     }
-   } catch (err) {
-     console.error("❌ Fetch error:", err);
-   } finally {
-     setLoading(false);
-     loadingRef.current = false;
-   }
- };
+  const handleLoadMore = () => {
+    if (!loadingRef.current && hasMore) {
+      setPage((p) => p + 1);
+    }
+  };
 
   const handleSearchChange = (e) => {
     const value = e.target.value;
@@ -113,39 +95,18 @@ export default function ProductCatalog() {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       setSearch(value);
+      setPage(1);
       setProducts([]);
-      setLastCreatedAt(null);
       setHasMore(true);
     }, 500);
   };
 
-  useEffect(() => {
-    fetchProducts(true);
-  }, [search, priceFilter, selectedCategory]);
-
   const handleCategoryChange = (categoryId) => {
     setSelectedCategory(categoryId);
     setProducts([]);
-    setLastCreatedAt(null);
+    setPage(1);
     setHasMore(true);
   };
-
-  const lastProductRef = useCallback(
-    (node) => {
-      if (loadingRef.current) return;
-      if (observer.current) observer.current.disconnect();
-
-      observer.current = new IntersectionObserver(
-        (entries) => {
-          if (entries[0].isIntersecting && hasMore) fetchProducts();
-        },
-        { threshold: 0.1 }
-      );
-
-      if (node) observer.current.observe(node);
-    },
-    [hasMore, products]
-  );
 
   return (
     <div className=" bg-stone-50">
@@ -276,7 +237,7 @@ export default function ProductCatalog() {
                 onFilter={(f) => {
                   setPriceFilter(f);
                   setProducts([]);
-                  setLastCreatedAt(null);
+                  setPage(1);
                   setHasMore(true);
                 }}
               />
@@ -301,7 +262,7 @@ export default function ProductCatalog() {
                   onFilter={(f) => {
                     setPriceFilter(f);
                     setProducts([]);
-                    setLastCreatedAt(null);
+                    setPage(1);
                     setHasMore(true);
                     setIsFilterOpen(false);
                   }}
@@ -313,15 +274,8 @@ export default function ProductCatalog() {
           {/* Products */}
           <div className="flex-1">
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-              {products.map((product, index) => (
-                <div
-                  key={`${product._id}-${index}`}
-                  ref={
-                    index === products.length - 1
-                      ? lastProductRef
-                      : null
-                  }
-                >
+              {products.map((product) => (
+                <div key={product._id}>
                   <ProductCard product={product} />
                 </div>
               ))}
@@ -333,9 +287,27 @@ export default function ProductCatalog() {
               </div>
             )}
 
-            {!hasMore && !loading && (
+            {hasMore && !loading && (
+              <div className="flex justify-center py-8">
+                <button
+                  onClick={handleLoadMore}
+                  className="flex items-center gap-2 px-6 py-3 bg-stone-900 text-white rounded-xl font-medium hover:bg-stone-800 transition-colors"
+                >
+                  <span>Load More</span>
+                  <ChevronDown size={18} />
+                </button>
+              </div>
+            )}
+
+            {!hasMore && products.length > 0 && (
               <p className="text-center py-12 text-stone-400">
                 end of the collection
+              </p>
+            )}
+
+            {!loading && products.length === 0 && (
+              <p className="text-center py-12 text-stone-400">
+                No products found
               </p>
             )}
           </div>
