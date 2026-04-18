@@ -211,7 +211,7 @@ const fetchProducts = async (reset = false) => {
                   <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wider mb-4">
                     Categories
                   </h3>
-                  <div className="bg-stone-100 p-4 rounded-2xl border border-stone-200/50 space-y-2">
+                  <div className="bg-stone-100 p-4 rounded-2xl border border-stone-200/50 max-h-64 overflow-y-auto">
                     <button
                       onClick={() => handleCategoryChange("")}
                       className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
