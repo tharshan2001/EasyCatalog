@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { LayoutGrid, Search, SlidersHorizontal, X, ChevronDown } from "lucide-react";
 import ProductCard from "./ProductCard";
 import FilterPanel from "./FilterPanel";
@@ -7,7 +7,7 @@ import api from "../store/api";
 export default function ProductCatalog() {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [page, setPage] = useState(1);
+  const [cursor, setCursor] = useState(null);
   const [hasMore, setHasMore] = useState(true);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
@@ -43,14 +43,15 @@ export default function ProductCatalog() {
     fetchCategories();
   }, []);
 
-const fetchProducts = async () => {
+const fetchProducts = async (reset = false) => {
     try {
       if (loadingRef.current) return;
-      if (!hasMore && page > 1) return;
+      if (!reset && !hasMore) return;
       
       loadingRef.current = true;
       
-      const params = { limit: 12, page };
+      const params = { limit: 12 };
+      if (!reset && cursor) params.cursor = cursor;
       if (search) params.search = search;
       if (selectedCategory) params.category = selectedCategory;
       if (priceFilter.min > 0) params.minPrice = priceFilter.min;
@@ -59,12 +60,15 @@ const fetchProducts = async () => {
       const res = await api.get("/products", { params });
       const data = res.data;
       
-      if (page === 1) {
+      if (reset) {
         setProducts(data.products || []);
       } else {
         setProducts((prev) => [...prev, ...(data.products || [])]);
       }
       setHasMore(data.hasMore);
+      if (data.hasMore && data.products?.length > 0) {
+        setCursor(data.products[data.products.length - 1]._id);
+      }
     } catch (err) {
       console.error("Fetch error:", err);
     } finally {
@@ -73,14 +77,24 @@ const fetchProducts = async () => {
   };
 
   useEffect(() => {
-    fetchProducts();
-  }, [page, search, priceFilter, selectedCategory]);
+    fetchProducts(true);
+  }, [search, priceFilter, selectedCategory]);
 
-const handleLoadMore = () => {
-    if (!loadingRef.current && hasMore) {
-      setPage((p) => p + 1);
-    }
-  };
+  const lastProductRef = useCallback((node) => {
+    if (!node || !hasMore) return;
+    
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loadingRef.current) {
+          fetchProducts(false);
+        }
+      },
+      { rootMargin: "200px" }
+    );
+    
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [hasMore, cursor]);
 
   const handleSearchChange = (e) => {
     const value = e.target.value;
@@ -89,17 +103,15 @@ const handleLoadMore = () => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       setSearch(value);
-      setPage(1);
-      setProducts([]);
-      setHasMore(true);
+      setCursor(null);
+      fetchProducts(true);
     }, 500);
   };
 
   const handleCategoryChange = (categoryId) => {
     setSelectedCategory(categoryId);
-    setProducts([]);
-    setPage(1);
-    setHasMore(true);
+    setCursor(null);
+    fetchProducts(true);
   };
 
   return (
@@ -191,9 +203,9 @@ const handleLoadMore = () => {
         <div className="flex gap-8">
 
           {/* Sidebar */}
-          <aside className="hidden lg:block w-64">
-            <div className="sticky top-24 space-y-6">
-              {/* Category Filter */}
+          <aside className="hidden lg:block w-64 lg:sticky lg:top-20 lg:self-start">
+            <div className="space-y-6">
+                {/* Category Filter */}
               {categories.length > 0 && (
                 <div>
                   <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wider mb-4">
@@ -227,14 +239,13 @@ const handleLoadMore = () => {
                 </div>
               )}
               
-              <FilterPanel
-                onFilter={(f) => {
-                  setPriceFilter(f);
-                  setProducts([]);
-                  setPage(1);
-                  setHasMore(true);
-                }}
-              />
+<FilterPanel
+                  onFilter={(f) => {
+                    setPriceFilter(f);
+                    setCursor(null);
+                    fetchProducts(true);
+                  }}
+                />
             </div>
           </aside>
 
@@ -255,9 +266,8 @@ const handleLoadMore = () => {
                 <FilterPanel
                   onFilter={(f) => {
                     setPriceFilter(f);
-                    setProducts([]);
-                    setPage(1);
-                    setHasMore(true);
+                    setCursor(null);
+                    fetchProducts(true);
                     setIsFilterOpen(false);
                   }}
                 />
@@ -267,12 +277,13 @@ const handleLoadMore = () => {
 
           {/* Products */}
           <div className="flex-1">
-            <div className="text-xs text-gray-500 mb-2">
-              Showing {products.length} products (page {page})
-            </div>
+            {/* <div className="text-xs text-gray-500 mb-2">Showing {products.length} products (page {page})</div> */}
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-              {products.map((product) => (
-                <div key={product._id}>
+              {products.map((product, index) => (
+                <div
+                  key={product._id}
+                  ref={index === products.length - 1 ? lastProductRef : null}
+                >
                   <ProductCard product={product} />
                 </div>
               ))}
@@ -281,18 +292,6 @@ const handleLoadMore = () => {
             {loadingRef.current && (
               <div className="flex justify-center py-12">
                 <div className="w-8 h-8 border-4 border-yellow-400 border-t-transparent rounded-full animate-spin" />
-              </div>
-            )}
-
-            {hasMore && !loadingRef.current && (
-              <div className="flex justify-center py-8">
-                <button
-                  onClick={handleLoadMore}
-                  className="flex items-center gap-2 px-6 py-3 bg-stone-900 text-white rounded-xl font-medium hover:bg-stone-800 transition-colors"
-                >
-                  <span>Load More</span>
-                  <ChevronDown size={18} />
-                </button>
               </div>
             )}
 

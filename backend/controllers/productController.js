@@ -57,65 +57,60 @@ export const createProduct = async (req, res) => {
 };
 
 // ---------------- Get Products for normal users (cursor-based infinite scroll) ----------------
-// controllers/productController.js
 export const getProducts = async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 12;
-    const page = parseInt(req.query.page) || 1;
-    const skip = (page - 1) * limit;
+    const cursor = req.query.cursor || null;
     const minPrice = req.query.minPrice ? Number(req.query.minPrice) : null;
     const maxPrice = req.query.maxPrice ? Number(req.query.maxPrice) : null;
     const search = req.query.search ? req.query.search.trim() : null;
     const categoryId = req.query.category || null;
 
-    const filter = { archived: { $ne: true } };
+    let filter = { archived: { $ne: true } };
+    const filterParts = [];
 
-    // Price filter
-    if (minPrice !== null || maxPrice !== null) {
-      filter.price = {};
-      if (minPrice !== null) filter.price.$gte = minPrice;
-      if (maxPrice !== null) filter.price.$lte = maxPrice;
+    if (cursor) {
+      filterParts.push({ _id: { $lt: cursor } });
     }
 
-    // Search filter - search in name, code, tags
+    if (minPrice !== null || maxPrice !== null) {
+      const priceFilter = {};
+      if (minPrice !== null) priceFilter.$gte = minPrice;
+      if (maxPrice !== null) priceFilter.$lte = maxPrice;
+      filterParts.push({ price: priceFilter });
+    }
+
     if (search) {
       const searchRegex = new RegExp(search, 'i');
-      filter.$and = [
-        {
-          $or: [
-            { name: searchRegex },
-            { code: searchRegex },
-            { tags: searchRegex }
-          ]
-        }
-      ];
+      filterParts.push({
+        $or: [
+          { name: searchRegex },
+          { code: searchRegex },
+          { tags: searchRegex }
+        ]
+      });
     }
 
-    // Category filter
     if (categoryId) {
-      if (search) {
-        filter.$and.push({ category: categoryId });
-      } else {
-        filter.category = categoryId;
-      }
+      filterParts.push({ category: categoryId });
     }
 
-    const [products, total] = await Promise.all([
-      Product.find(filter)
-        .sort({ createdAt: -1, _id: 1 })
-        .select('_id code name slug image_url tags price category') 
-        .populate('category', 'name slug')
-        .skip(skip)
-        .limit(limit),
-      Product.countDocuments(filter)
-    ]);
+    if (filterParts.length > 0) {
+      filter = { ...filter, $and: filterParts };
+    }
+
+    const products = await Product.find(filter)
+      .sort({ _id: -1 })
+      .select('_id code name slug image_url tags price category') 
+      .populate('category', 'name slug')
+      .limit(limit + 1);
+    
+    const hasMore = products.length > limit;
+    if (hasMore) products.pop();
     
     res.json({
       products,
-      hasMore: skip + products.length < total,
-      total,
-      page,
-      totalPages: Math.ceil(total / limit),
+      hasMore,
     });
   } catch (error) {
     console.error(error);

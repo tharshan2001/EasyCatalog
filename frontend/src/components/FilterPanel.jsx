@@ -26,7 +26,7 @@ export default function FilterPanel({ onFilter, minLimit = 0, maxLimit = 100000 
   };
 
   return (
-    <div className="flex flex-col gap-6 lg:sticky lg:top-28">
+    <div className="flex flex-col gap-6 lg:sticky lg:top-24">
       <div>
         <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wider mb-4">
           Price Range
