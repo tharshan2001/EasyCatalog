@@ -2,19 +2,17 @@ const ProductCard = ({ product }) => {
   const category = product.category;
   
   return (
-    <div className="group flex flex-col" style={{
+    <div className="group flex flex-col h-full" style={{
       background: '#fffefb',
       border: '1px solid #c5c0b1',
       borderRadius: '5px',
       overflow: 'hidden',
       transition: 'border-color 0.15s ease'
     }}>
-      <div className="relative" style={{
+      {/* Image Container */}
+      <div className="relative w-full" style={{
         background: '#eceae3',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        height: '180px'
+        height: '200px' // Increased slightly for a clearer view, adjust as needed
       }}>
         {category && (
           <div className="absolute top-2 left-2 z-10">
@@ -24,23 +22,33 @@ const ProductCard = ({ product }) => {
               borderRadius: '14px',
               fontSize: '11px',
               fontWeight: 500,
-              color: '#36342e'
+              color: '#36342e',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
             }}>
               {category.name}
             </span>
           </div>
         )}
+        
         {product.image_url ? (
           <img 
             src={product.image_url} 
             alt={product.name} 
-            style={{ maxWidth: '85%', maxHeight: '85%', objectFit: 'contain' }}
+            style={{ 
+              width: '100%', 
+              height: '100%', 
+              objectFit: 'contain', // Ensures the whole image is visible without cropping
+              padding: '8px' // Optional: Gives a tiny edge margin so it doesn't touch the borders
+            }}
           />
         ) : (
-          <span style={{ fontSize: '48px' }}>📦</span>
+          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ fontSize: '48px' }}>📦</span>
+          </div>
         )}
       </div>
 
+      {/* Content Container */}
       <div className="p-3 flex flex-col" style={{ flex: 1 }}>
         <div className="mb-1">
           <p className="label" style={{ fontSize: '10px', color: '#939084' }}>

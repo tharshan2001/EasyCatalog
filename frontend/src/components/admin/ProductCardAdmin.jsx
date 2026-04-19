@@ -1,7 +1,7 @@
 import React from "react";
 import { Trash2, Archive, ArchiveRestore, ImageOff } from "lucide-react";
 
-const ProductCardAdmin = React.forwardRef(({ product, onDelete, onToggleArchive }, ref) => {
+const ProductCardAdmin = React.forwardRef(({ product, onDelete, onToggleArchive, isLast }, ref) => {
   if (!product || !product._id) return null;
 
   const name = product.name ?? "Unnamed Product";
@@ -11,7 +11,12 @@ const ProductCardAdmin = React.forwardRef(({ product, onDelete, onToggleArchive 
   const category = product.category;
 
   return (
-    <tr ref={ref} className={`group border-b border-[#E0E4EB] transition-colors hover:bg-[#F4F6FA] ${product.archived ? 'bg-[#F4F6FA]' : 'bg-white'}`}>
+    <tr 
+      ref={ref} 
+      data-last-row={isLast ? "true" : undefined}
+      className={`group border-b border-[#E0E4EB] transition-colors hover:bg-[#F4F6FA] ${product.archived ? 'bg-[#F4F6FA]' : 'bg-white'}`}
+    >
+      {/* ... rest of your JSX remains exactly the same ... */}
       <td className="py-4 pl-6 pr-4">
         <div className="flex items-center gap-4">
           <div className="h-14 w-14 bg-[#F4F6FA] flex-shrink-0 overflow-hidden border border-[#E0E4EB]">
@@ -45,8 +50,8 @@ const ProductCardAdmin = React.forwardRef(({ product, onDelete, onToggleArchive 
 
       <td className="px-4 py-4">
         {tags.length > 0 ? (
-          tags.map((tag) => (
-            <span key={tag} className="text-[9px] font-medium text-[#4A90E2] bg-[#4A90E2]/10 px-2 py-1 rounded-sm mr-1">
+          tags.map((tag, i) => (
+            <span key={`${tag}-${i}`} className="text-[9px] font-medium text-[#4A90E2] bg-[#4A90E2]/10 px-2 py-1 rounded-sm mr-1">
               {tag}
             </span>
           ))
@@ -101,5 +106,7 @@ const ProductCardAdmin = React.forwardRef(({ product, onDelete, onToggleArchive 
     </tr>
   );
 });
+
+ProductCardAdmin.displayName = 'ProductCardAdmin';
 
 export default ProductCardAdmin;

@@ -1,6 +1,7 @@
 import Product from "../models/Product.js";
 import { uploadToS3 } from "../middleware/uploadMiddleware.js";
 import slugify from "slug";
+import mongoose from "mongoose";
 
 // ---------------- Create Product ----------------
 export const createProduct = async (req, res) => {
@@ -70,7 +71,7 @@ export const getProducts = async (req, res) => {
     const filterParts = [];
 
     if (cursor) {
-      filterParts.push({ _id: { $lt: cursor } });
+      filterParts.push({ _id: { $lt: new mongoose.Types.ObjectId(cursor) } });
     }
 
     if (minPrice !== null || maxPrice !== null) {
@@ -118,24 +119,42 @@ export const getProducts = async (req, res) => {
   }
 };
 
-// ---------------- Get Products for admin (cursor-based infinite scroll) ----------------
+// ---------------- Get Products for admin (page-based pagination) ----------------
 export const getProductsAdmin = async (req, res) => {
   try {
-    const limit = parseInt(req.query.limit) || 10;
-    const lastCreatedAt = req.query.lastCreatedAt ? new Date(req.query.lastCreatedAt) : null;
+    const limit = parseInt(req.query.limit) || 20;
+    const cursor = req.query.cursor || null;
 
-    const filter = {};
-    if (lastCreatedAt) filter.createdAt = { $lt: lastCreatedAt };
+    let filter = {};
+
+    // cursor-based pagination (ID only)
+    if (cursor) {
+      filter._id = { $lt: cursor };
+    }
 
     const products = await Product.find(filter)
-      .sort({ createdAt: -1 })
+      .sort({ _id: -1 })
+      .limit(limit + 1)
       .select("_id code name slug image_url tags archived price createdAt category")
-      .populate('category', 'name slug')
-      .limit(limit);
+      .populate("category", "name slug")
+      .lean();
+
+    const hasMore = products.length > limit;
+
+    if (hasMore) products.pop();
+
+    const nextCursor =
+      hasMore && products.length > 0
+        ? products[products.length - 1]._id
+        : null;
+
+    const total = await Product.countDocuments();
 
     res.json({
       products,
-      hasMore: products.length === limit,
+      hasMore,
+      nextCursor,
+      total,
     });
   } catch (error) {
     console.error(error);
@@ -240,7 +259,11 @@ export const advancedSearchProducts = async (req, res) => {
     if (cursor) {
       const sortField = sortBy || "_id";
       const sortDir = sortOrder === "asc" ? "$gt" : "$lt";
-      filterParts.push({ [sortField]: { [sortDir]: cursor } });
+      filterParts.push({
+        [sortField]: {
+          [sortDir]: sortField === "_id" ? new mongoose.Types.ObjectId(cursor) : cursor
+        }
+      });
     }
 
     if (parsedMinPrice !== null || parsedMaxPrice !== null) {

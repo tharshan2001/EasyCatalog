@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import ProductCardAdmin from "./ProductCardAdmin";
 import {
   Loader2,
@@ -7,29 +7,29 @@ import {
   X,
   Upload,
   Image as ImageIcon,
-  AlertCircle as AlertIcon
+  AlertCircle as AlertIcon,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import api from "../../store/api";
 import { toast } from "react-hot-toast";
 import Swal from "sweetalert2";
 
+const PAGE_SIZE = 20;
+
 export default function ProductListAdmin() {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [scrollLoading, setScrollLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [nextCursor, setNextCursor] = useState(null);
-  const [hasMore, setHasMore] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(10); // Assume 200/20 = 10 pages
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({ code: "", name: "", tags: "", price: "", category: "" });
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
   const [formLoading, setFormLoading] = useState(false);
-
-  const observer = useRef();
-  const scrollContainerRef = useRef(null);
 
   const loadCategories = async () => {
     try {
@@ -40,73 +40,42 @@ export default function ProductListAdmin() {
     }
   };
 
-  useEffect(() => {
-    loadProducts();
-    loadCategories();
-    return () => {
-      if (observer.current) observer.current.disconnect();
-    };
-  }, []);
-
-  const loadProducts = async (cursor = null) => {
+const loadProducts = async (page = 1) => {
     try {
-      if (cursor) setScrollLoading(true);
-      else setLoading(true);
+      setLoading(true);
+      setError(null);
 
-      const response = await api.get("products/admin", { params: { cursor } });
-      const data = response.data?.products ?? [];
-      const more = response.data?.hasMore ?? false;
+      console.log('Loading page:', page);
+      const url = `/products/admin?page=${page}&limit=${PAGE_SIZE}&_=${Date.now()}`;
+      const { data } = await api.get(url);
+      console.log('Got products:', data.products?.length, 'first id:', data.products?.[0]?._id);
+      const validProducts = (data.products ?? []).map(item => ({
+        ...item,
+        tags: item.tags ?? [],
+        image_url: item.image_url ?? "",
+        archived: item.archived ?? false,
+      }));
 
-      const validProducts = data
-        .filter(item => item && item._id && item.name)
-        .map(item => ({
-          ...item,
-          tags: item.tags ?? [],
-          image_url: item.image_url ?? "",
-          archived: item.archived ?? false,
-        }));
-
-      if (cursor) {
-        setProducts(prev => {
-          const existingIds = new Set(prev.map(p => p._id));
-          const newProducts = validProducts.filter(p => !existingIds.has(p._id));
-          return [...prev, ...newProducts];
-        });
-      } else {
-        setProducts(validProducts);
+      setProducts(validProducts);
+      setCurrentPage(page);
+      
+      // If we got fewer than PAGE_SIZE products, we're at the last page
+      if (validProducts.length < PAGE_SIZE && page > 1) {
+        setTotalPages(page);
       }
-
-      setNextCursor(validProducts.length > 0 ? validProducts[validProducts.length - 1]._id : null);
-      setHasMore(more);
     } catch (err) {
-      console.error("Failed to fetch products:", err);
-      setError("Failed to load products.");
-      setHasMore(false);
-      toast.error("Failed to load products");
+      setError(err.response?.data?.message || 'Failed to load products');
     } finally {
       setLoading(false);
-      setScrollLoading(false);
     }
   };
 
-  const lastProductRef = useCallback(
-    node => {
-      if (!node || !hasMore) return;
-      
-      const obs = new IntersectionObserver(
-        entries => {
-          if (entries[0].isIntersecting && hasMore && !scrollLoading) {
-            loadProducts(nextCursor);
-          }
-        },
-        { rootMargin: "200px" }
-      );
+  
 
-      obs.observe(node);
-      return () => obs.disconnect();
-    },
-    [hasMore, nextCursor]
-  );
+  useEffect(() => {
+    loadProducts();
+    loadCategories();
+  }, []);
 
   const handleDelete = async (_id) => {
     const result = await Swal.fire({
@@ -183,13 +152,19 @@ export default function ProductListAdmin() {
       setFormData({ code: "", name: "", tags: "", price: "", category: "" });
       setFile(null);
       setPreview(null);
-      loadProducts();
+      loadProducts(currentPage);
       setTimeout(() => setIsModalOpen(false), 1000);
     } catch (err) {
       console.error(err);
       Swal.fire("Error", err.response?.data?.message || "Failed to create product", "error");
     } finally {
       setFormLoading(false);
+    }
+  };
+
+  const goToPage = (page) => {
+    if (page >= 1) {
+      loadProducts(page);
     }
   };
 
@@ -219,13 +194,13 @@ export default function ProductListAdmin() {
           <div className="bg-red-50 border-l-2 border-[#E74C3C] p-4 flex items-center gap-4 text-[#E74C3C]">
             <AlertIcon size={20} /> {error}
           </div>
-        ) : products.length === 0 ? (
+        ) : products.length === 0 && !loading ? (
           <div className="text-center py-32 bg-white border border-dashed border-[#E0E4EB]">
             <PackageOpen size={48} className="mx-auto text-[#7F8C9D] mb-4" />
             <p className="font-medium text-[#7F8C9D]">The archive is currently empty.</p>
           </div>
         ) : (
-          <div ref={scrollContainerRef} className="bg-white overflow-y-auto max-h-[500px]">
+          <div className="bg-white overflow-y-auto max-h-[500px]">
             <table className="w-full text-left border-collapse pl-10">
               <thead>
                 <tr className="sticky top-0 bg-[#F4F6FA] border-b border-[#E0E4EB]">
@@ -237,23 +212,64 @@ export default function ProductListAdmin() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#E0E4EB]">
-                {products.map((product, index) => (
+                {products.map((product) => (
                   <ProductCardAdmin
                     key={product._id}
                     product={product}
                     onDelete={handleDelete}
                     onToggleArchive={handleArchive}
-                    ref={index === products.length - 1 ? lastProductRef : null}
                   />
                 ))}
               </tbody>
             </table>
 
-            {scrollLoading && (
+            {loading && (
               <div className="flex justify-center py-4">
                 <Loader2 className="animate-spin text-[#4A90E2]" size={24} />
               </div>
             )}
+          </div>
+        )}
+
+        {!loading && products.length > 0 && (
+          <div className="flex items-center justify-between mt-4 px-2">
+            <div className="text-sm text-[#7F8C9D]">
+              Page {currentPage} of {totalPages}
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => goToPage(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="p-2 rounded-md hover:bg-[#F4F6FA] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <ChevronLeft size={20} className="text-[#7F8C9D]" />
+              </button>
+              <div className="flex items-center gap-1">
+                {[...Array(Math.min(5, totalPages))].map((_, i) => {
+                  const page = i + 1;
+                  return (
+                    <button
+                      key={page}
+                      onClick={() => goToPage(page)}
+                      className={`w-8 h-8 rounded-md text-sm font-medium transition-colors ${
+                        currentPage === page
+                          ? "bg-[#4A90E2] text-white"
+                          : "text-[#7F8C9D] hover:bg-[#F4F6FA]"
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  );
+                })}
+              </div>
+              <button
+                onClick={() => goToPage(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="p-2 rounded-md hover:bg-[#F4F6FA] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <ChevronRight size={20} className="text-[#7F8C9D]" />
+              </button>
+            </div>
           </div>
         )}
       </div>
