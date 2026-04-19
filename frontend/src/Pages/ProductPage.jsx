@@ -1,14 +1,10 @@
-import React from 'react'
-import ProductCatalog from '../components/ProductCatalog'
+import CatalogLayout from '../components/catalog/layout/CatalogLayout';
+import ProductGrid from '../components/catalog/ProductGrid';
 
-const ProductPage = () => {
+export default function ProductPage() {
   return (
-    <div>
-
-        <ProductCatalog/>
-      
-    </div>
-  )
+    <CatalogLayout>
+      <ProductGrid />
+    </CatalogLayout>
+  );
 }
-
-export default ProductPage

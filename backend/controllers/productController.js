@@ -212,3 +212,91 @@ export const deleteProduct = async (req, res) => {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
+
+// ---------------- Advanced Search Products ----------------
+export const advancedSearchProducts = async (req, res) => {
+  try {
+    const {
+      limit = 12,
+      cursor = null,
+      search = null,
+      category = null,
+      tags = null,
+      minPrice = null,
+      maxPrice = null,
+      archived = "false",
+      sortBy = "_id",
+      sortOrder = "desc",
+    } = req.query;
+
+    const parsedLimit = parseInt(limit) || 12;
+    const parsedMinPrice = minPrice ? Number(minPrice) : null;
+    const parsedMaxPrice = maxPrice ? Number(maxPrice) : null;
+    const isArchived = archived === "true";
+
+    let filter = { archived: isArchived };
+    const filterParts = [];
+
+    if (cursor) {
+      const sortField = sortBy || "_id";
+      const sortDir = sortOrder === "asc" ? "$gt" : "$lt";
+      filterParts.push({ [sortField]: { [sortDir]: cursor } });
+    }
+
+    if (parsedMinPrice !== null || parsedMaxPrice !== null) {
+      const priceFilter = {};
+      if (parsedMinPrice !== null) priceFilter.$gte = parsedMinPrice;
+      if (parsedMaxPrice !== null) priceFilter.$lte = parsedMaxPrice;
+      filterParts.push({ price: priceFilter });
+    }
+
+    if (search) {
+      const searchRegex = new RegExp(search, 'i');
+      filterParts.push({
+        $or: [
+          { name: searchRegex },
+          { code: searchRegex },
+          { tags: searchRegex },
+          { slug: searchRegex }
+        ]
+      });
+    }
+
+    if (category) {
+      filterParts.push({ category });
+    }
+
+    if (tags) {
+      const tagArray = tags.split(",").map(t => t.trim());
+      filterParts.push({ tags: { $in: tagArray } });
+    }
+
+    if (filterParts.length > 0) {
+      filter = { ...filter, $and: filterParts };
+    }
+
+    const sortOptions = { [sortBy || "_id"]: sortOrder === "asc" ? 1 : -1 };
+
+    const products = await Product.find(filter)
+      .sort(sortOptions)
+      .select('_id code name slug image_url tags price category archived createdAt')
+      .populate('category', 'name slug')
+      .limit(parsedLimit + 1);
+
+    const hasMore = products.length > parsedLimit;
+    if (hasMore) products.pop();
+
+    const nextCursor = hasMore && products.length > 0 
+      ? products[products.length - 1][sortBy || "_id"] 
+      : null;
+
+    res.json({
+      products,
+      hasMore,
+      nextCursor
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};

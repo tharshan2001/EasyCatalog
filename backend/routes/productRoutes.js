@@ -8,6 +8,7 @@ import {
   updateProduct,
   archiveProduct,
   deleteProduct,
+  advancedSearchProducts,
 } from "../controllers/productController.js";
 
 const router = express.Router();
@@ -15,6 +16,9 @@ const router = express.Router();
 /* ---------------- Public Routes ---------------- */
 // GET products - unarchived for normal users
 router.get("/", getProducts);
+
+// GET advanced search - supports more filters and sorting
+router.get("/search/advanced", advancedSearchProducts);
 
 /* ---------------- Admin Routes ---------------- */
 // All routes below require: logged-in user + admin role
