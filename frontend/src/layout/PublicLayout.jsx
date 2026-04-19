@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { FilterProvider } from '../components/catalog/context/FilterContext';
 import Filter from '../components/catalog/filter/Filter';
+import { Menu, X } from 'lucide-react';
 
 const navLinks = [
   { to: '/catalog', label: 'Catalog' },
@@ -9,6 +11,7 @@ const navLinks = [
 ];
 
 export default function PublicLayout() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
   const showFilters = location.pathname === '/catalog';
 
@@ -40,7 +43,20 @@ export default function PublicLayout() {
                 EasyCatalog
               </h1>
               
-              <nav style={{ display: 'flex', gap: '24px' }}>
+              <button 
+                className="md:hidden"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                style={{ display: 'none', background: 'none', border: 'none', cursor: 'pointer', padding: '8px' }}
+              >
+                <style>{`
+                  @media (max-width: 767px) {
+                    button.md\\:hidden { display: block !important; }
+                  }
+                `}</style>
+                {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+              </button>
+
+              <nav className="desktop-nav">
                 {navLinks.map((link) => (
                   <NavLink
                     key={link.to}
@@ -59,8 +75,45 @@ export default function PublicLayout() {
                   </NavLink>
                 ))}
               </nav>
+              <style>{`
+                .desktop-nav { display: flex; gap: 24px; }
+                @media (max-width: 767px) {
+                  .desktop-nav { display: none !important; }
+                }
+              `}</style>
             </div>
           </div>
+
+          <div className="mobile-nav" style={{ 
+            display: mobileMenuOpen ? 'block' : 'none',
+            borderTop: '1px solid #c5c0b1'
+          }}>
+            {navLinks.map((link) => (
+              <NavLink
+                key={link.to}
+                to={link.to}
+                onClick={() => setMobileMenuOpen(false)}
+                style={({ isActive }) => ({
+                  display: 'block',
+                  padding: '12px 16px',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  color: isActive ? '#ff4f00' : '#201515',
+                  textDecoration: 'none',
+                  borderLeft: isActive ? '3px solid #ff4f00' : '3px solid transparent',
+                  background: mobileMenuOpen ? '#fffefb' : 'none'
+                })}
+              >
+                {link.label}
+              </NavLink>
+            ))}
+          </div>
+          <style>{`
+            .mobile-nav { display: none; }
+            @media (min-width: 768px) {
+              .mobile-nav { display: none !important; }
+            }
+          `}</style>
         </header>
 
         {showFilters && (
