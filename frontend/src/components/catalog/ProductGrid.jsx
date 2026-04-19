@@ -15,7 +15,6 @@ export default function ProductGrid() {
   const loadingRef = useRef(false);
 
   const loadMore = async (isInitial = false) => {
-    console.log('[ProductGrid] loadMore start - isInitial:', isInitial, 'hasMore:', hasMore, 'loadingRef:', loadingRef.current);
     if (loadingRef.current || !hasMore) return;
     
     loadingRef.current = true;
@@ -32,7 +31,6 @@ export default function ProductGrid() {
       const { data } = await api.get(`/products/search/advanced?${params}`);
       
       const newProducts = isInitial ? data.products : [...products, ...data.products];
-      console.log('[ProductGrid] loaded - new:', data.products.length, 'total:', newProducts.length, 'hasMore:', data.hasMore);
       
       setProducts(newProducts);
       setHasMore(data.hasMore);
@@ -40,13 +38,10 @@ export default function ProductGrid() {
       if (data.hasMore && data.products.length > 0) {
         const lastProduct = data.products[data.products.length - 1];
         cursorRef.current = lastProduct[sortBy];
-        console.log('[ProductGrid] cursor updated:', cursorRef.current);
       } else {
         cursorRef.current = null;
-        console.log('[ProductGrid] ALL PRODUCTS LOADED - total:', newProducts.length);
       }
     } catch (err) {
-      console.error('[ProductGrid] error:', err);
       setError(err.response?.data?.message || 'Failed to load products');
     } finally {
       setLoading(false);
@@ -55,7 +50,6 @@ export default function ProductGrid() {
   };
 
   useEffect(() => {
-    console.log('[ProductGrid] filter changed, resetting...');
     cursorRef.current = null;
     setProducts([]);
     setHasMore(true);
