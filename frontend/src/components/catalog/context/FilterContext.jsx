@@ -20,6 +20,7 @@ const initialState = {
   sortOrder: 'desc',
   categories: [],
   categoriesLoading: false,
+  priceStats: { min: 0, max: 100000 },
 };
 
 function filterReducer(state, action) {
@@ -36,8 +37,17 @@ function filterReducer(state, action) {
       return { ...state, categories: action.payload };
     case 'SET_CATEGORIES_LOADING':
       return { ...state, categoriesLoading: action.payload };
+    case 'SET_PRICE_STATS':
+      return { ...state, priceStats: action.payload };
     case 'RESET_FILTERS':
-      return { ...state, search: '', category: '', priceRange: { min: 0, max: 100000 }, sortBy: 'createdAt', sortOrder: 'desc' };
+      return { 
+        ...state, 
+        search: '', 
+        category: '', 
+        priceRange: { min: state.priceStats?.min ?? 0, max: state.priceStats?.max ?? 100000 }, 
+        sortBy: '_id', 
+        sortOrder: 'desc' 
+      };
     default:
       return state;
   }
@@ -47,18 +57,28 @@ export function FilterProvider({ children }) {
   const [state, dispatch] = useReducer(filterReducer, initialState);
 
   useEffect(() => {
-    async function fetchCategories() {
+    async function fetchData() {
       dispatch({ type: 'SET_CATEGORIES_LOADING', payload: true });
       try {
-        const { data } = await api.get('/categories');
-        dispatch({ type: 'SET_CATEGORIES', payload: data.categories || [] });
+        const [catRes, statsRes] = await Promise.allSettled([
+          api.get('/categories'),
+          api.get('/products/stats')
+        ]);
+        
+        if (catRes.status === 'fulfilled') {
+          dispatch({ type: 'SET_CATEGORIES', payload: catRes.value.data.categories || [] });
+        }
+        
+        if (statsRes.status === 'fulfilled' && statsRes.value.data) {
+          dispatch({ type: 'SET_PRICE_STATS', payload: statsRes.value.data });
+        }
       } catch (err) {
-        console.error('Failed to fetch categories:', err);
+        console.error('Failed to fetch data:', err);
       } finally {
         dispatch({ type: 'SET_CATEGORIES_LOADING', payload: false });
       }
     }
-    fetchCategories();
+    fetchData();
   }, []);
 
   const setSearch = useCallback((value) => dispatch({ type: 'SET_SEARCH', payload: value }), []);

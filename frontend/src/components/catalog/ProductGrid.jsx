@@ -83,7 +83,7 @@ export default function ProductGrid() {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-stone-200 p-6">
+    <div className="r p-15">
       <div className="mb-4 text-sm text-stone-500">
         Showing {products.length} products
       </div>

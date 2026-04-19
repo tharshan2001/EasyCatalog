@@ -290,13 +290,39 @@ export const advancedSearchProducts = async (req, res) => {
       ? products[products.length - 1][sortBy || "_id"] 
       : null;
 
-    res.json({
+res.json({
       products,
       hasMore,
       nextCursor
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// ---------------- Get Product Stats (min/max price, count) ----------------
+export const getProductStats = async (req, res) => {
+  try {
+    const stats = await Product.aggregate([
+      { $match: { archived: { $ne: true } } },
+      {
+        $group: {
+          _id: null,
+          minPrice: { $min: '$price' },
+          maxPrice: { $max: '$price' },
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    if (stats.length === 0) {
+      return res.json({ minPrice: 0, maxPrice: 100000, count: 0 });
+    }
+
+    res.json(stats[0]);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 };

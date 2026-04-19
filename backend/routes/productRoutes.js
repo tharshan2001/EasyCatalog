@@ -5,6 +5,7 @@ import {
   createProduct,
   getProducts,
   getProductsAdmin,
+  getProductStats,
   updateProduct,
   archiveProduct,
   deleteProduct,
@@ -19,6 +20,9 @@ router.get("/", getProducts);
 
 // GET advanced search - supports more filters and sorting
 router.get("/search/advanced", advancedSearchProducts);
+
+// GET product stats (price range, count)
+router.get("/stats", getProductStats);
 
 /* ---------------- Admin Routes ---------------- */
 // All routes below require: logged-in user + admin role
