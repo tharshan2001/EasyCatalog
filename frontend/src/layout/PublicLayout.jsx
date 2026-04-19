@@ -27,7 +27,7 @@ export default function PublicLayout() {
           background: '#fffefb',
           borderBottom: '1px solid #c5c0b1'
         }}>
-          <div className="container" style={{ padding: '0 16px' }}>
+          <div className="container" style={{ padding: '0 16px', position: 'relative' }}>
             <div style={{
               display: 'flex',
               alignItems: 'center',
@@ -44,15 +44,9 @@ export default function PublicLayout() {
               </h1>
               
               <button 
-                className="md:hidden"
+                className="mobile-menu-btn"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                style={{ display: 'none', background: 'none', border: 'none', cursor: 'pointer', padding: '8px' }}
               >
-                <style>{`
-                  @media (max-width: 767px) {
-                    button.md\\:hidden { display: block !important; }
-                  }
-                `}</style>
                 {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
               </button>
 
@@ -76,9 +70,17 @@ export default function PublicLayout() {
                 ))}
               </nav>
               <style>{`
-                .desktop-nav { display: flex; gap: 24px; }
+                .desktop-nav { 
+                  display: flex; 
+                  gap: 24px; 
+                  position: absolute;
+                  left: 50%;
+                  transform: translateX(-50%);
+                }
+                .mobile-menu-btn { display: none; }
                 @media (max-width: 767px) {
                   .desktop-nav { display: none !important; }
+                  .mobile-menu-btn { display: block; background: none; border: none; cursor: pointer; padding: 8px; }
                 }
               `}</style>
             </div>
