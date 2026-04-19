@@ -14,38 +14,46 @@ export default function PublicLayout() {
 
   return (
     <FilterProvider>
-      <div className="min-h-screen bg-stone-100">
-        <header className="fixed top-0 left-0 right-0 z-50 bg-white shadow-sm border-b border-stone-200">
-          <div className="max-w-7xl mx-auto px-3 md:px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between h-12 md:h-16">
-              <h1 className="text-lg md:text-xl font-bold text-stone-800">EasyCatalog</h1>
+      <div style={{ minHeight: '100vh', background: '#fffefb' }}>
+        <header style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 50,
+          background: '#fffefb',
+          borderBottom: '1px solid #c5c0b1'
+        }}>
+          <div className="container" style={{ padding: '0 16px' }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              height: '56px'
+            }}>
+              <h1 style={{
+                fontSize: '20px',
+                fontWeight: 700,
+                color: '#201515',
+                letterSpacing: '-0.5px'
+              }}>
+                EasyCatalog
+              </h1>
               
-              <nav className="hidden md:flex items-center gap-4">
+              <nav style={{ display: 'flex', gap: '24px' }}>
                 {navLinks.map((link) => (
                   <NavLink
                     key={link.to}
                     to={link.to}
-                    className={({ isActive }) =>
-                      `text-sm font-medium transition-colors ${
-                        isActive ? 'text-yellow-600' : 'text-stone-600 hover:text-stone-800'
-                      }`
-                    }
-                  >
-                    {link.label}
-                  </NavLink>
-                ))}
-              </nav>
-
-              <nav className="flex md:hidden gap-2">
-                {navLinks.map((link) => (
-                  <NavLink
-                    key={link.to}
-                    to={link.to}
-                    className={({ isActive }) =>
-                      `text-xs px-2 py-1 rounded ${
-                        isActive ? 'bg-yellow-100 text-yellow-700' : 'text-stone-600'
-                      }`
-                    }
+                    style={({ isActive }) => ({
+                      fontSize: '14px',
+                      fontWeight: 500,
+                      color: isActive ? '#ff4f00' : '#201515',
+                      textDecoration: 'none',
+                      padding: '8px 0',
+                      borderBottom: isActive ? '3px solid #ff4f00' : '3px solid transparent',
+                      transition: 'all 0.15s ease'
+                    })}
                   >
                     {link.label}
                   </NavLink>
@@ -55,14 +63,30 @@ export default function PublicLayout() {
           </div>
         </header>
 
-        <div className={`fixed top-12 md:top-16 left-0 right-0 z-40 bg-stone-100/95 backdrop-blur-sm border-b border-stone-200/50 ${showFilters ? 'block' : 'hidden'}`}>
-          <div className="max-w-7xl mx-auto px-3 md:px-4 sm:px-6 lg:px-8 py-2 md:py-3">
-            <Filter />
+        {showFilters && (
+          <div style={{
+            position: 'fixed',
+            top: '57px',
+            left: 0,
+            right: 0,
+            zIndex: 40,
+            background: '#fffefb',
+            borderBottom: '1px solid #eceae3',
+            padding: '12px 0'
+          }}>
+            <div className="container">
+              <Filter />
+            </div>
           </div>
-        </div>
+        )}
 
-        <main className={`max-w-7xl mx-auto px-3 md:px-4 sm:px-6 lg:px-8 pt-20 md:pt-10 ${showFilters ? 'md:pt-40' : 'pt-20'}`}>
-          <Outlet />
+        <main style={{
+          paddingTop: showFilters ? '120px' : '80px',
+          paddingBottom: '48px'
+        }}>
+          <div className="container">
+            <Outlet />
+          </div>
         </main>
       </div>
     </FilterProvider>

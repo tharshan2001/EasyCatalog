@@ -82,30 +82,37 @@ export default function ProductGrid() {
 
   if (error) {
     return (
-      <div className="bg-white rounded-lg shadow-sm border border-stone-200 p-6">
-        <p className="text-red-500">{error}</p>
+      <div className="card">
+        <p style={{ color: '#ff4f00' }}>{error}</p>
       </div>
     );
   }
 
   return (
-    <div className="mt-10 p-3 md:p-6">
-      <div className="mb-3 md:mb-4 text-xs md:text-sm text-stone-500 flex items-center justify-between">
+    <div className='mt-15'>
+      <div style={{ 
+        marginBottom: '16px', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'space-between',
+        color: '#939084',
+        fontSize: '14px'
+      }}>
         <span>{loading ? 'Loading...' : `${products.length} products`}</span>
-        {loadingMore && <Loader2 className="w-3 h-3 animate-spin text-yellow-500" />}
+        {loadingMore && <Loader2 className="w-3 h-3 animate-spin" style={{ color: '#ff4f00' }} />}
       </div>
       
       {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-8 h-8 animate-spin text-yellow-500" />
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '80px 0' }}>
+          <Loader2 className="w-8 h-8 animate-spin" style={{ color: '#ff4f00' }} />
         </div>
       ) : products.length === 0 ? (
-        <div className="flex items-center justify-center py-12">
-          <p className="text-stone-500 text-sm">No products found</p>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px 0' }}>
+          <p style={{ color: '#939084' }}>No products found</p>
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-4">
+          <div className="product-grid">
             {products.map((product, index) => (
               <div
                 key={product._id}
@@ -117,13 +124,15 @@ export default function ProductGrid() {
           </div>
 
           {loadingMore && (
-            <div className="flex justify-center py-4">
-              <Loader2 className="w-5 h-5 animate-spin text-yellow-500" />
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '16px 0' }}>
+              <Loader2 className="w-5 h-5 animate-spin" style={{ color: '#ff4f00' }} />
             </div>
           )}
 
           {!hasMore && products.length > 0 && (
-            <p className="text-center text-stone-400 py-3 md:py-4 text-xs md:text-sm">No more products</p>
+            <p style={{ textAlign: 'center', color: '#c5c0b1', padding: '16px 0', fontSize: '14px' }}>
+              No more products
+            </p>
           )}
         </>
       )}

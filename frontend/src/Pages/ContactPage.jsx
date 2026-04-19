@@ -1,24 +1,24 @@
 export default function ContactPage() {
   return (
-    <div className="min-h-screen bg-stone-100 py-12">
-      <div className="max-w-4xl mx-auto px-4">
-        <div className="bg-white rounded-lg shadow-sm border border-stone-200 p-8">
-          <h1 className="text-3xl font-bold text-stone-800 mb-4">Contact Us</h1>
+    <div className="section">
+      <div className="container">
+        <div className="card">
+          <h1 className="title-lg mb-4">Contact Us</h1>
           
-          <div className="space-y-4">
+          <div style={{ display: 'grid', gap: '24px' }}>
             <div>
-              <h3 className="font-medium text-stone-800 mb-1">Email</h3>
-              <p className="text-stone-600">contact@easycatalog.com</p>
+              <h3 className="title-md mb-1">Email</h3>
+              <p className="body">contact@easycatalog.com</p>
             </div>
             
             <div>
-              <h3 className="font-medium text-stone-800 mb-1">Phone</h3>
-              <p className="text-stone-600">+94 123 456 789</p>
+              <h3 className="title-md mb-1">Phone</h3>
+              <p className="body">+94 123 456 789</p>
             </div>
             
             <div>
-              <h3 className="font-medium text-stone-800 mb-1">Address</h3>
-              <p className="text-stone-600">
+              <h3 className="title-md mb-1">Address</h3>
+              <p className="body">
                 123 Main Street,<br />
                 Colombo 07,<br />
                 Sri Lanka

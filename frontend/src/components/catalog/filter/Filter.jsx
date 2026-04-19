@@ -92,18 +92,20 @@ export default function Filter() {
     <div className="w-full">
       <div className="flex items-center gap-2 mb-2">
         <div className="relative flex-1 md:flex-none md:w-48 lg:w-64">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: '#939084' }} />
           <input
             type="text"
             placeholder="Search..."
             value={localSearch}
             onChange={(e) => handleSearchChange(e.target.value)}
-            className="w-full pl-8 pr-8 py-1.5 md:py-2 text-sm bg-white border border-stone-200 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-400"
+            className="w-full pl-8 pr-8 py-1.5 md:py-2 text-sm bg-white border rounded-md focus:outline-none"
+            style={{ borderColor: '#c5c0b1', color: '#201515' }}
           />
           {localSearch && (
             <button 
               onClick={() => handleSearchChange('')} 
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
+              className="absolute right-2 top-1/2 -translate-y-1/2"
+              style={{ color: '#939084' }}
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -112,12 +114,13 @@ export default function Filter() {
 
         <button 
           onClick={() => setShowFilters(!showFilters)}
-          className="lg:hidden flex items-center gap-1.5 px-3 py-1.5 text-sm bg-white border border-stone-200 rounded-md"
+          className="lg:hidden flex items-center gap-1.5 px-3 py-1.5 text-sm bg-white border rounded-md"
+          style={{ borderColor: '#c5c0b1', color: '#201515' }}
         >
           <SlidersHorizontal className="w-4 h-4" />
           <span>Filters</span>
           {activeCount > 0 && (
-            <span className="w-5 h-5 bg-yellow-500 rounded-full text-xs flex items-center justify-center text-white">
+            <span className="w-5 h-5 rounded-full text-xs flex items-center justify-center text-white" style={{ backgroundColor: '#ff4f00' }}>
               {activeCount}
             </span>
           )}
@@ -128,7 +131,8 @@ export default function Filter() {
         <select
           value={category}
           onChange={(e) => setCategory(e.target.value)}
-          className="px-2.5 py-1.5 text-sm bg-white border border-stone-200 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-400 flex-1 min-w-[100px]"
+          className="px-2.5 py-1.5 text-sm bg-white border rounded-md focus:outline-none flex-1 min-w-[100px]"
+          style={{ borderColor: '#c5c0b1', color: '#201515' }}
         >
           <option value="">All</option>
           {categories.map((cat) => (
@@ -136,9 +140,9 @@ export default function Filter() {
           ))}
         </select>
 
-        <div className="flex items-center gap-2 px-2 py-1 bg-white border border-stone-200 rounded-md flex-1 min-w-[180px] md:min-w-[220px]">
-          <span className="text-xs text-stone-600 whitespace-nowrap hidden sm:block">{priceLabel}</span>
-          <span className="text-xs text-stone-600 sm:hidden whitespace-nowrap">{priceLabel}</span>
+        <div className="flex items-center gap-2 px-2 py-1 bg-white border rounded-md flex-1 min-w-[180px] md:min-w-[220px]" style={{ borderColor: '#c5c0b1' }}>
+          <span className="text-xs whitespace-nowrap hidden sm:block" style={{ color: '#201515' }}>{priceLabel}</span>
+          <span className="text-xs whitespace-nowrap sm:hidden" style={{ color: '#201515' }}>{priceLabel}</span>
           <div className="flex-1">
             <Range
               step={1000}
@@ -155,7 +159,7 @@ export default function Filter() {
                     width: '100%',
                     background: getTrackBackground({
                       values: localPrice,
-                      colors: ['#e5e5e5', '#eab308', '#e5e5e5'],
+                      colors: ['#c5c0b1', '#ff4f00', '#c5c0b1'],
                       min: minPrice,
                       max: maxPrice,
                     }),
@@ -165,7 +169,7 @@ export default function Filter() {
                   {children}
                 </div>
               )}
-              renderThumb={({ props, index }) => (
+              renderThumb={({ props }) => (
                 <div
                   {...props}
                   key={props.key}
@@ -174,9 +178,8 @@ export default function Filter() {
                     height: '14px',
                     width: '14px',
                     borderRadius: '50%',
-                    backgroundColor: '#eab308',
+                    backgroundColor: '#ff4f00',
                     border: '2px solid white',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
                   }}
                 />
               )}
@@ -187,7 +190,8 @@ export default function Filter() {
         <select
           value={sortBy}
           onChange={(e) => setSort(e.target.value)}
-          className="px-2.5 py-1.5 text-sm bg-white border border-stone-200 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-400"
+          className="px-2.5 py-1.5 text-sm bg-white border rounded-md focus:outline-none"
+          style={{ borderColor: '#c5c0b1', color: '#201515' }}
         >
           {SORT_OPTIONS.map((opt) => (
             <option key={`${opt.id}-${opt.sortOrder}`} value={opt.id}>{opt.label}</option>
@@ -197,7 +201,8 @@ export default function Filter() {
         {activeCount > 0 && (
           <button
             onClick={handleClear}
-            className="px-2.5 py-1.5 text-sm text-yellow-600 font-medium hover:text-yellow-700"
+            className="px-2.5 py-1.5 text-sm font-medium hover:opacity-80"
+            style={{ color: '#ff4f00' }}
           >
             Clear
           </button>
