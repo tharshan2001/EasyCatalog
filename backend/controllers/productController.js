@@ -86,7 +86,7 @@ export const getProducts = async (req, res) => {
       filterParts.push({
         $or: [
           { name: searchRegex },
-          { code: searchRegex },
+          { code: { $regex: `^${search}$`, $options: 'i' } },
           { tags: searchRegex }
         ]
       });
@@ -278,7 +278,7 @@ export const advancedSearchProducts = async (req, res) => {
       filterParts.push({
         $or: [
           { name: searchRegex },
-          { code: searchRegex },
+          { code: { $regex: `^${search}$`, $options: 'i' } },
           { tags: searchRegex },
           { slug: searchRegex }
         ]
