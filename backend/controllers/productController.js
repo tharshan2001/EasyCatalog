@@ -123,38 +123,32 @@ export const getProducts = async (req, res) => {
 export const getProductsAdmin = async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 20;
-    const cursor = req.query.cursor || null;
+    const page = parseInt(req.query.page) || 1;
 
-    let filter = {};
+    const skip = (page - 1) * limit;
 
-    // cursor-based pagination (ID only)
-    if (cursor) {
-      filter._id = { $lt: cursor };
-    }
+    const filter = {};
 
-    const products = await Product.find(filter)
-      .sort({ _id: -1 })
-      .limit(limit + 1)
-      .select("_id code name slug image_url tags archived price createdAt category")
-      .populate("category", "name slug")
-      .lean();
+    const [products, total] = await Promise.all([
+      Product.find(filter)
+        .sort({ _id: -1 })
+        .skip(skip)
+        .limit(limit)
+        .select("_id code name slug image_url tags archived price createdAt category")
+        .populate("category", "name slug")
+        .lean(),
+      Product.countDocuments(filter)
+    ]);
 
-    const hasMore = products.length > limit;
-
-    if (hasMore) products.pop();
-
-    const nextCursor =
-      hasMore && products.length > 0
-        ? products[products.length - 1]._id
-        : null;
-
-    const total = await Product.countDocuments();
+    const totalPages = Math.ceil(total / limit);
+    const hasMore = page < totalPages;
 
     res.json({
       products,
       hasMore,
-      nextCursor,
       total,
+      totalPages,
+      currentPage: page
     });
   } catch (error) {
     console.error(error);

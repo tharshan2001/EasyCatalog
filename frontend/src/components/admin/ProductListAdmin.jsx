@@ -23,7 +23,7 @@ export default function ProductListAdmin() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(10); // Assume 200/20 = 10 pages
+  const [totalPages, setTotalPages] = useState(1);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({ code: "", name: "", tags: "", price: "", category: "" });
@@ -45,10 +45,8 @@ const loadProducts = async (page = 1) => {
       setLoading(true);
       setError(null);
 
-      console.log('Loading page:', page);
-      const url = `/products/admin?page=${page}&limit=${PAGE_SIZE}&_=${Date.now()}`;
+      const url = `/products/admin?page=${page}&limit=${PAGE_SIZE}`;
       const { data } = await api.get(url);
-      console.log('Got products:', data.products?.length, 'first id:', data.products?.[0]?._id);
       const validProducts = (data.products ?? []).map(item => ({
         ...item,
         tags: item.tags ?? [],
@@ -58,11 +56,7 @@ const loadProducts = async (page = 1) => {
 
       setProducts(validProducts);
       setCurrentPage(page);
-      
-      // If we got fewer than PAGE_SIZE products, we're at the last page
-      if (validProducts.length < PAGE_SIZE && page > 1) {
-        setTotalPages(page);
-      }
+      setTotalPages(data.totalPages || 1);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load products');
     } finally {
@@ -245,22 +239,62 @@ const loadProducts = async (page = 1) => {
                 <ChevronLeft size={20} className="text-[#7F8C9D]" />
               </button>
               <div className="flex items-center gap-1">
-                {[...Array(Math.min(5, totalPages))].map((_, i) => {
-                  const page = i + 1;
-                  return (
+                {totalPages <= 7 ? (
+                  [...Array(totalPages)].map((_, i) => {
+                    const page = i + 1;
+                    return (
+                      <button
+                        key={page}
+                        onClick={() => goToPage(page)}
+                        className={`w-8 h-8 rounded-md text-sm font-medium transition-colors ${
+                          currentPage === page
+                            ? "bg-[#4A90E2] text-white"
+                            : "text-[#7F8C9D] hover:bg-[#F4F6FA]"
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    );
+                  })
+                ) : (
+                  <>
                     <button
-                      key={page}
-                      onClick={() => goToPage(page)}
+                      onClick={() => goToPage(1)}
                       className={`w-8 h-8 rounded-md text-sm font-medium transition-colors ${
-                        currentPage === page
+                        currentPage === 1
                           ? "bg-[#4A90E2] text-white"
                           : "text-[#7F8C9D] hover:bg-[#F4F6FA]"
                       }`}
                     >
-                      {page}
+                      1
                     </button>
-                  );
-                })}
+                    {currentPage > 3 && <span className="text-[#7F8C9D]">...</span>}
+                    {[currentPage - 1, currentPage, currentPage + 1].filter(p => p > 1 && p < totalPages).map(page => (
+                      <button
+                        key={page}
+                        onClick={() => goToPage(page)}
+                        className={`w-8 h-8 rounded-md text-sm font-medium transition-colors ${
+                          currentPage === page
+                            ? "bg-[#4A90E2] text-white"
+                            : "text-[#7F8C9D] hover:bg-[#F4F6FA]"
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                    {currentPage < totalPages - 2 && <span className="text-[#7F8C9D]">...</span>}
+                    <button
+                      onClick={() => goToPage(totalPages)}
+                      className={`w-8 h-8 rounded-md text-sm font-medium transition-colors ${
+                        currentPage === totalPages
+                          ? "bg-[#4A90E2] text-white"
+                          : "text-[#7F8C9D] hover:bg-[#F4F6FA]"
+                      }`}
+                    >
+                      {totalPages}
+                    </button>
+                  </>
+                )}
               </div>
               <button
                 onClick={() => goToPage(currentPage + 1)}
