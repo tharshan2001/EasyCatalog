@@ -1,7 +1,7 @@
 import React from "react";
-import { Trash2, Archive, ArchiveRestore, ImageOff } from "lucide-react";
+import { Trash2, Archive, ArchiveRestore, ImageOff, Edit } from "lucide-react";
 
-const ProductCardAdmin = React.forwardRef(({ product, onDelete, onToggleArchive, isLast }, ref) => {
+const ProductCardAdmin = React.forwardRef(({ product, onDelete, onToggleArchive, onEdit, isLast }, ref) => {
   if (!product || !product._id) return null;
 
   const name = product.name ?? "Unnamed Product";
@@ -80,6 +80,17 @@ const ProductCardAdmin = React.forwardRef(({ product, onDelete, onToggleArchive,
 
       <td className="py-4 pl-4 pr-6 text-right">
         <div className="flex justify-end items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button
+            onClick={() => onEdit(product)}
+            className="flex flex-col items-center p-2 text-[#7F8C9D] hover:text-[#4A90E2] hover:bg-white rounded-md transition-all"
+            title="Edit"
+          >
+            <Edit size={16} strokeWidth={1.5} />
+            <span className="text-[8px] mt-1 font-mono uppercase tracking-wider">Edit</span>
+          </button>
+
+          <div className="w-px h-4 bg-[#E0E4EB] mx-1" />
+
           <button
             onClick={() => onToggleArchive(product._id)}
             className="flex flex-col items-center p-2 text-[#7F8C9D] hover:text-[#4A90E2] hover:bg-white rounded-md transition-all"

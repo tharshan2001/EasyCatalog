@@ -9,7 +9,8 @@ import {
   Image as ImageIcon,
   AlertCircle as AlertIcon,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Pencil
 } from "lucide-react";
 import api from "../../store/api";
 import { toast } from "react-hot-toast";
@@ -26,6 +27,7 @@ export default function ProductListAdmin() {
   const [totalPages, setTotalPages] = useState(1);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState(null);
   const [formData, setFormData] = useState({ code: "", name: "", tags: "", price: "", category: "" });
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
@@ -138,19 +140,27 @@ const loadProducts = async (page = 1) => {
       Object.keys(formData).forEach(key => payload.append(key, formData[key]));
       if (file) payload.append("image", file);
 
-      await api.post("/products", payload, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      if (editingProduct) {
+        await api.put(`/products/admin/${editingProduct._id}`, payload, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        toast.success("Product updated successfully!");
+      } else {
+        await api.post("/products", payload, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        toast.success("Product created successfully!");
+      }
 
-      toast.success("Product created successfully!");
       setFormData({ code: "", name: "", tags: "", price: "", category: "" });
       setFile(null);
       setPreview(null);
+      setEditingProduct(null);
       loadProducts(currentPage);
       setTimeout(() => setIsModalOpen(false), 1000);
     } catch (err) {
       console.error(err);
-      Swal.fire("Error", err.response?.data?.message || "Failed to create product", "error");
+      Swal.fire("Error", err.response?.data?.message || "Failed to save product", "error");
     } finally {
       setFormLoading(false);
     }
@@ -160,6 +170,20 @@ const loadProducts = async (page = 1) => {
     if (page >= 1) {
       loadProducts(page);
     }
+  };
+
+  const handleEdit = (product) => {
+    setEditingProduct(product);
+    setFormData({
+      code: product.code || "",
+      name: product.name || "",
+      tags: Array.isArray(product.tags) ? product.tags.join(", ") : "",
+      price: product.price || "",
+      category: typeof product.category === "object" ? product.category._id : product.category || "",
+    });
+    setPreview(product.image_url || null);
+    setFile(null);
+    setIsModalOpen(true);
   };
 
   const inputStyle = "w-full border border-[#E0E4EB] bg-white px-3 py-2 rounded-md outline-none focus:ring-2 focus:ring-[#4A90E2]/20 focus:border-[#4A90E2] text-sm transition-all";
@@ -212,6 +236,7 @@ const loadProducts = async (page = 1) => {
                     product={product}
                     onDelete={handleDelete}
                     onToggleArchive={handleArchive}
+                    onEdit={handleEdit}
                   />
                 ))}
               </tbody>
@@ -312,7 +337,7 @@ const loadProducts = async (page = 1) => {
         <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50">
           <div className="bg-white rounded-lg w-full max-w-4xl p-8 relative">
             <button
-              onClick={() => setIsModalOpen(false)}
+              onClick={() => { setIsModalOpen(false); setEditingProduct(null); setFormData({ code: "", name: "", tags: "", price: "", category: "" }); setFile(null); setPreview(null); }}
               className="absolute top-4 right-4 p-2 rounded-full hover:bg-[#F4F6FA] transition-all"
             >
               <X size={20} />
@@ -320,11 +345,11 @@ const loadProducts = async (page = 1) => {
 
             <div className="flex items-center gap-3 mb-6">
               <div className="p-2 bg-[#4A90E2]/10 text-[#4A90E2] rounded-lg">
-                <Plus size={20} />
+                {editingProduct ? <Pencil size={20} /> : <Plus size={20} />}
               </div>
               <div>
-                <h2 className="text-lg font-bold text-[#2C3E50]">New Product</h2>
-                <p className="text-xs text-[#7F8C9D]">Add a new item to your catalog</p>
+                <h2 className="text-lg font-bold text-[#2C3E50]">{editingProduct ? "Edit Product" : "New Product"}</h2>
+                <p className="text-xs text-[#7F8C9D]">{editingProduct ? "Update product details" : "Add a new item to your catalog"}</p>
               </div>
             </div>
 
@@ -365,7 +390,7 @@ const loadProducts = async (page = 1) => {
                 </div>
                 <div className="pt-4 border-t border-[#E0E4EB]">
                   <button type="submit" disabled={formLoading} className="w-full bg-[#4A90E2] text-white font-semibold py-3 rounded-lg flex items-center justify-center gap-2 disabled:opacity-50 transition-all hover:bg-[#357ABD]">
-                    {formLoading ? <Loader2 size={18} className="animate-spin" /> : "Create Product"}
+                    {formLoading ? <Loader2 size={18} className="animate-spin" /> : editingProduct ? "Update Product" : "Create Product"}
                   </button>
                 </div>
               </div>
