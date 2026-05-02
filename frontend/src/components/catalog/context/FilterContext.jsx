@@ -96,16 +96,16 @@ export function FilterProvider({ children }) {
     const params = new URLSearchParams();
     if (state.search) params.append('search', state.search);
     if (state.category) params.append('category', state.category);
-    if (state.priceRange && state.priceRange.min != null && state.priceRange.min > 0) {
+    if (state.priceRange && state.priceRange.min != null && state.priceRange.min !== (state.priceStats?.min ?? 0)) {
       params.append('minPrice', state.priceRange.min);
     }
-    if (state.priceRange && state.priceRange.max != null && state.priceRange.max > 0) {
+    if (state.priceRange && state.priceRange.max != null && state.priceRange.max !== (state.priceStats?.max ?? 100000)) {
       params.append('maxPrice', state.priceRange.max);
     }
     params.append('sortBy', state.sortBy);
     params.append('sortOrder', state.sortOrder);
     return params.toString();
-  }, [state.search, state.category, state.priceRange, state.sortBy, state.sortOrder]);
+  }, [state.search, state.category, state.priceRange, state.sortBy, state.sortOrder, state.priceStats]);
 
   const value = {
     ...state,

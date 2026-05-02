@@ -251,13 +251,7 @@ export const advancedSearchProducts = async (req, res) => {
     const filterParts = [];
 
     if (cursor) {
-      const sortField = sortBy || "_id";
-      const sortDir = sortOrder === "asc" ? "$gt" : "$lt";
-      filterParts.push({
-        [sortField]: {
-          [sortDir]: sortField === "_id" ? new mongoose.Types.ObjectId(cursor) : cursor
-        }
-      });
+      filterParts.push({ _id: { $lt: new mongoose.Types.ObjectId(cursor) } });
     }
 
     if (parsedMinPrice !== null || parsedMaxPrice !== null) {
@@ -292,7 +286,7 @@ export const advancedSearchProducts = async (req, res) => {
       filter = { ...filter, $and: filterParts };
     }
 
-    const sortOptions = { [sortBy || "_id"]: sortOrder === "asc" ? 1 : -1 };
+    const sortOptions = { [sortBy || "_id"]: sortOrder === "asc" ? 1 : -1, _id: -1 };
 
     const products = await Product.find(filter)
       .sort(sortOptions)

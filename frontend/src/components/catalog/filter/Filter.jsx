@@ -82,7 +82,11 @@ export default function Filter() {
     resetFilters();
   }, [setSearch, setCategory, setSort, resetFilters, setPriceRange, minPrice, maxPrice]);
 
-  const activeCount = [search, category, (priceRange?.min ?? minPrice) > minPrice || (priceRange?.max ?? maxPrice) < maxPrice].filter(Boolean).length;
+  const activeCount = [
+    search, 
+    category, 
+    (priceRange?.min ?? minPrice) !== minPrice || (priceRange?.max ?? maxPrice) !== maxPrice
+  ].filter(Boolean).length;
 
   const priceLabel = (priceRange?.min ?? minPrice) === minPrice && (priceRange?.max ?? maxPrice) === maxPrice
     ? 'Price' 
