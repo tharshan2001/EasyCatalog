@@ -44,6 +44,7 @@ const App = () => {
             <Route path="/admin/categories" element={<CategoryListAdmin />} />
           </Route>
         </Route>
+        <Route path="*" element={<Navigate to="/catalog" replace />} />
       </Routes>
     </Router>
   );

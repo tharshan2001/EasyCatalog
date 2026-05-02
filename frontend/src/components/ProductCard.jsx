@@ -1,5 +1,17 @@
+import { Copy, Check } from "lucide-react";
+import { useState } from "react";
+
 const ProductCard = ({ product }) => {
   const category = product.category;
+  const [copied, setCopied] = useState(false);
+
+  const copyCode = () => {
+    if (product.code) {
+      navigator.clipboard.writeText(product.code);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    }
+  };
   
   return (
     <div className="group flex flex-col h-full" style={{
@@ -51,9 +63,16 @@ const ProductCard = ({ product }) => {
       {/* Content Container */}
       <div className="p-3 flex flex-col" style={{ flex: 1 }}>
         <div className="mb-1">
-          <p className="label" style={{ fontSize: '10px', color: '#939084' }}>
-            {product.code || '—'}
-          </p>
+          <div className="flex items-center gap-1.5 cursor-pointer" onClick={copyCode}>
+            <p className="label" style={{ fontSize: '10px', color: '#939084' }}>
+              {product.code || '—'}
+            </p>
+            {product.code && (
+              copied
+                ? <Check size={12} style={{ color: '#ff4f00' }} />
+                : <Copy size={10} style={{ color: '#c5c0b1' }} className="hover:text-[#ff4f00] transition-colors" />
+            )}
+          </div>
           <h3 className="group-hover:text-[#ff4f00] transition-colors" style={{
             fontSize: '14px',
             fontWeight: 600,
