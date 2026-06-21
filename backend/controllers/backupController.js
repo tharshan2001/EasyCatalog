@@ -148,7 +148,7 @@ export const restoreBackup = async (req, res) => {
 
       await Product.deleteMany({});
       const products = parseCSV(productCsv, (row) => {
-        const tags = row.tags ? row.tags.split("; ").map((t) => t.trim()).filter(Boolean) : [];
+        const tags = row.tags ? row.tags.split(/[;,]\s*/).map((t) => t.trim()).filter(Boolean) : [];
         let catId = null;
         const catName = row.category?.trim().toLowerCase();
         if (catName && categoryMap[catName]) {
