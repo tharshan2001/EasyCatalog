@@ -7,7 +7,8 @@ import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
 import productRoutes from "./routes/productRoutes.js";
 import categoryRoutes from "./routes/categoryRoutes.js";
-import dashboardRoutes from "./routes/dashboardRoutes.js"; 
+import dashboardRoutes from "./routes/dashboardRoutes.js";
+import backupRoutes from "./routes/backupRoutes.js";
 
 dotenv.config();
 connectDB();
@@ -21,7 +22,8 @@ app.use(cors({ origin: "http://localhost:5173", credentials: true }));
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/categories", categoryRoutes);
-app.use("/api/dashboard", dashboardRoutes); // <-- mount dashboard routes
+app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/backup", backupRoutes);
 
 const PORT = process.env.PORT || 5002;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

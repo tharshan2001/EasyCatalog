@@ -42,6 +42,7 @@ const App = () => {
             <Route path="/admin/dashboard" element={<DashboardPage />} />
             <Route path="/admin/products" element={<ProductListAdmin />} />
             <Route path="/admin/categories" element={<CategoryListAdmin />} />
+            <Route path="/admin/backup" element={<Navigate to="/admin/dashboard" replace />} />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/catalog" replace />} />

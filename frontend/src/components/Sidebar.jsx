@@ -3,6 +3,7 @@ import {
   LayoutDashboard, 
   Package,
   Tag,
+  Download,
   LogOut 
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -18,6 +19,7 @@ const Sidebar = () => {
     { name: 'Dashboard', icon: LayoutDashboard, path: '/admin/dashboard' },
     { name: 'Products', icon: Package, path: '/admin/products' },
     { name: 'Categories', icon: Tag, path: '/admin/categories' },
+    { name: 'Backup', icon: Download, path: '/admin/backup' },
   ];
 
   const handleLogout = async () => {
